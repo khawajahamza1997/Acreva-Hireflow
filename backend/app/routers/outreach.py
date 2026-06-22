@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.database import get_admin_client
+from app.database import get_admin_client, exec_maybe_single
 from app.deps import get_current_user, require_role, require_active_subscription, CurrentUser
 from app.schemas import SendEmailRequest, EmailTemplateUpdate, InviteMemberRequest, OrganizationUpdate, ProfileUpdate
 from app.services.email_service import send_email, render_template, DEFAULT_TEMPLATES
@@ -47,36 +47,32 @@ def preview_template(
     user: CurrentUser = Depends(require_active_subscription),
 ):
     db = get_admin_client()
-    tmpl = (
+    tmpl = exec_maybe_single(
         db.table("email_templates")
         .select("*")
         .eq("organization_id", user.organization_id)
         .eq("template_type", template_type)
-        .maybe_single()
-        .execute()
     )
-    if not tmpl.data:
+    if not tmpl:
         raise HTTPException(status_code=404, detail="Template not found.")
-    cand = (
+    cand = exec_maybe_single(
         db.table("candidates")
         .select("*")
         .eq("id", candidate_id)
         .eq("organization_id", user.organization_id)
-        .maybe_single()
-        .execute()
     )
-    if not cand.data:
+    if not cand:
         raise HTTPException(status_code=404, detail="Candidate not found.")
     placeholders = {
-        "candidate_name": cand.data.get("name") or "Candidate",
+        "candidate_name": cand.get("name") or "Candidate",
         "job_title": job_title,
         "company_name": user.org_name,
         "recruiter_name": user.full_name or "Recruitment Team",
-        "interview_date": cand.data.get("interview_date") or "To be confirmed",
-        "interview_time": cand.data.get("interview_time") or "To be confirmed",
+        "interview_date": cand.get("interview_date") or "To be confirmed",
+        "interview_time": cand.get("interview_time") or "To be confirmed",
         "interview_format": "Video call (link to follow)",
     }
-    return render_template(tmpl.data, placeholders)
+    return render_template(tmpl, placeholders)
 
 
 @router.post("/outreach/send")
@@ -84,15 +80,13 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
     if user.role == "viewer":
         raise HTTPException(status_code=403, detail="Viewers cannot send emails.")
     db = get_admin_client()
-    cand = (
+    cand = exec_maybe_single(
         db.table("candidates")
         .select("*")
         .eq("id", body.candidate_id)
         .eq("organization_id", user.organization_id)
-        .maybe_single()
-        .execute()
     )
-    if not cand.data:
+    if not cand:
         raise HTTPException(status_code=404, detail="Candidate not found.")
 
     if body.demo_mode:
@@ -107,7 +101,7 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         )
         return {"success": True, "demo": True, "message": "Demo mode — email not sent."}
 
-    result = send_email(cand.data.get("email", ""), body.subject, body.body)
+    result = send_email(cand.get("email", ""), body.subject, body.body)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
 
@@ -119,7 +113,7 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         "email_sent",
         "candidate",
         body.candidate_id,
-        {"subject": body.subject, "to": cand.data.get("email")},
+        {"subject": body.subject, "to": cand.get("email")},
     )
     return {"success": True, "demo": False}
 

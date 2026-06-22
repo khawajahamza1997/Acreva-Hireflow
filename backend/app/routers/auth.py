@@ -2,7 +2,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
-from app.database import get_admin_client
+from app.database import get_admin_client, exec_maybe_single, exec_rows
 from app.config import settings
 from app.deps import get_current_user, CurrentUser
 from app.schemas import SignUpRequest, LoginRequest, OnboardingRequest, MessageResponse, TokenResponse
@@ -16,19 +16,25 @@ def signup(body: SignUpRequest):
     db = get_admin_client()
     slug = slugify(body.organization_name)
 
-    existing = db.table("organizations").select("id").eq("slug", slug).maybe_single().execute()
-    if existing.data:
+    if exec_maybe_single(db.table("organizations").select("id").eq("slug", slug)):
         slug = f"{slug}-{uuid.uuid4().hex[:6]}"
 
-    auth = db.auth.sign_up(
-        {
-            "email": body.email,
-            "password": body.password,
-            "options": {"data": {"full_name": body.full_name}},
-        }
-    )
+    try:
+        created = db.auth.admin.create_user(
+            {
+                "email": body.email,
+                "password": body.password,
+                "email_confirm": True,
+                "user_metadata": {"full_name": body.full_name},
+            }
+        )
+    except Exception as exc:
+        message = str(exc).lower()
+        if "already" in message or "registered" in message or "exists" in message:
+            raise HTTPException(status_code=400, detail="Email already registered. Try logging in.") from exc
+        raise HTTPException(status_code=400, detail=f"Signup failed: {exc}") from exc
 
-    if not auth.user:
+    if not created.user:
         raise HTTPException(status_code=400, detail="Signup failed.")
 
     trial_ends = datetime.now(timezone.utc).replace(microsecond=0)
@@ -45,11 +51,14 @@ def signup(body: SignUpRequest):
         )
         .execute()
     )
-    org_id = org.data[0]["id"]
+    org_rows = exec_rows(org)
+    if not org_rows:
+        raise HTTPException(status_code=500, detail="Could not create organization.")
+    org_id = org_rows[0]["id"]
 
     db.table("profiles").insert(
         {
-            "id": auth.user.id,
+            "id": created.user.id,
             "organization_id": org_id,
             "email": body.email,
             "full_name": body.full_name,
@@ -59,15 +68,15 @@ def signup(body: SignUpRequest):
 
     ensure_default_templates(org_id)
 
-    session = auth.session
-    if not session:
-        raise HTTPException(status_code=400, detail="Check your email to confirm signup, then log in.")
+    auth = db.auth.sign_in_with_password({"email": body.email, "password": body.password})
+    if not auth.session:
+        raise HTTPException(status_code=500, detail="Account created but login failed. Try logging in.")
 
     return TokenResponse(
-        access_token=session.access_token,
-        refresh_token=session.refresh_token,
+        access_token=auth.session.access_token,
+        refresh_token=auth.session.refresh_token,
         user={
-            "id": auth.user.id,
+            "id": created.user.id,
             "email": body.email,
             "organization_id": org_id,
             "role": "owner",
@@ -82,14 +91,8 @@ def login(body: LoginRequest):
     if not auth.user or not auth.session:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
-    profile = (
-        db.table("profiles")
-        .select("*")
-        .eq("id", auth.user.id)
-        .maybe_single()
-        .execute()
-    )
-    if not profile.data:
+    profile = exec_maybe_single(db.table("profiles").select("*").eq("id", auth.user.id))
+    if not profile:
         raise HTTPException(status_code=403, detail="Complete onboarding first.")
 
     return TokenResponse(
@@ -98,8 +101,8 @@ def login(body: LoginRequest):
         user={
             "id": auth.user.id,
             "email": body.email,
-            "organization_id": profile.data["organization_id"],
-            "role": profile.data.get("role", "recruiter"),
+            "organization_id": profile["organization_id"],
+            "role": profile.get("role", "recruiter"),
         },
     )
 
@@ -107,8 +110,7 @@ def login(body: LoginRequest):
 @router.post("/onboarding", response_model=MessageResponse)
 def onboarding(body: OnboardingRequest, user: CurrentUser = Depends(get_current_user)):
     db = get_admin_client()
-    existing = db.table("profiles").select("id").eq("id", user.id).maybe_single().execute()
-    if existing.data:
+    if exec_maybe_single(db.table("profiles").select("id").eq("id", user.id)):
         raise HTTPException(status_code=400, detail="Onboarding already completed.")
 
     slug = slugify(body.organization_name)
@@ -117,7 +119,10 @@ def onboarding(body: OnboardingRequest, user: CurrentUser = Depends(get_current_
         .insert({"name": body.organization_name, "slug": slug, "subscription_status": "trialing"})
         .execute()
     )
-    org_id = org.data[0]["id"]
+    org_rows = exec_rows(org)
+    if not org_rows:
+        raise HTTPException(status_code=500, detail="Could not create organization.")
+    org_id = org_rows[0]["id"]
     db.table("profiles").insert(
         {
             "id": user.id,

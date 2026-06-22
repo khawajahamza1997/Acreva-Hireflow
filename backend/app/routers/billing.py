@@ -1,7 +1,7 @@
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config import settings
-from app.database import get_admin_client
+from app.database import get_admin_client, exec_maybe_single, exec_rows
 from app.deps import get_current_user, require_role, CurrentUser
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -15,17 +15,11 @@ def create_checkout(user: CurrentUser = Depends(require_role("owner"))):
         raise HTTPException(status_code=503, detail="Stripe is not configured yet.")
 
     db = get_admin_client()
-    org = (
-        db.table("organizations")
-        .select("*")
-        .eq("id", user.organization_id)
-        .maybe_single()
-        .execute()
-    )
-    if not org.data:
+    org = exec_maybe_single(db.table("organizations").select("*").eq("id", user.organization_id))
+    if not org:
         raise HTTPException(status_code=404, detail="Organization not found.")
 
-    customer_id = org.data.get("stripe_customer_id")
+    customer_id = org.get("stripe_customer_id")
     if not customer_id:
         customer = stripe.Customer.create(
             email=user.email,
@@ -52,11 +46,13 @@ def billing_portal(user: CurrentUser = Depends(require_role("owner"))):
     if not settings.stripe_secret_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured.")
     db = get_admin_client()
-    org = db.table("organizations").select("stripe_customer_id").eq("id", user.organization_id).maybe_single().execute()
-    if not org.data or not org.data.get("stripe_customer_id"):
+    org = exec_maybe_single(
+        db.table("organizations").select("stripe_customer_id").eq("id", user.organization_id)
+    )
+    if not org or not org.get("stripe_customer_id"):
         raise HTTPException(status_code=400, detail="No billing account yet. Start checkout first.")
     session = stripe.billing_portal.Session.create(
-        customer=org.data["stripe_customer_id"],
+        customer=org["stripe_customer_id"],
         return_url=f"{settings.frontend_url}/dashboard/billing",
     )
     return {"portal_url": session.url}
@@ -89,8 +85,8 @@ async def stripe_webhook(request: Request):
     elif event["type"] == "customer.subscription.deleted":
         sub = event["data"]["object"]
         customer = sub.get("customer")
-        org = db.table("organizations").select("id").eq("stripe_customer_id", customer).maybe_single().execute()
-        if org.data:
-            db.table("organizations").update({"subscription_status": "canceled"}).eq("id", org.data["id"]).execute()
+        org = exec_maybe_single(db.table("organizations").select("id").eq("stripe_customer_id", customer))
+        if org:
+            db.table("organizations").update({"subscription_status": "canceled"}).eq("id", org["id"]).execute()
 
     return {"received": True}

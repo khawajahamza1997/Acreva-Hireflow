@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
-from app.database import get_admin_client
+from app.database import get_admin_client, exec_maybe_single
 from app.deps import get_current_user, require_role, require_active_subscription, CurrentUser
 from app.schemas import JobCreate, JobUpdate, CandidateUpdate, ScoreRequest, ShortlistRequest
 from app.services.cv_parser import process_cv_bytes
@@ -91,17 +91,14 @@ def list_candidates(
 @router.get("/candidates/{candidate_id}")
 def get_candidate(candidate_id: str, user: CurrentUser = Depends(require_active_subscription)):
     db = get_admin_client()
-    result = (
+    data = exec_maybe_single(
         db.table("candidates")
         .select("*")
         .eq("id", candidate_id)
         .eq("organization_id", user.organization_id)
-        .maybe_single()
-        .execute()
     )
-    if not result.data:
+    if not data:
         raise HTTPException(status_code=404, detail="Candidate not found.")
-    data = result.data
     if data.get("cv_storage_path"):
         data["cv_download_url"] = get_signed_url(data["cv_storage_path"])
     logs = (
@@ -136,15 +133,13 @@ async def upload_candidate(
     candidate_id = str(uuid.uuid4())
 
     if job_id:
-        job = (
+        job = exec_maybe_single(
             db.table("jobs")
             .select("id")
             .eq("id", job_id)
             .eq("organization_id", user.organization_id)
-            .maybe_single()
-            .execute()
         )
-        if not job.data:
+        if not job:
             raise HTTPException(status_code=404, detail="Job not found.")
 
     storage_path = upload_cv(user.organization_id, candidate_id, filename, content)
@@ -212,15 +207,13 @@ def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_active_s
     if user.role == "viewer":
         raise HTTPException(status_code=403, detail="Viewers cannot score candidates.")
     db = get_admin_client()
-    job = (
+    job = exec_maybe_single(
         db.table("jobs")
         .select("*")
         .eq("id", body.job_id)
         .eq("organization_id", user.organization_id)
-        .maybe_single()
-        .execute()
     )
-    if not job.data:
+    if not job:
         raise HTTPException(status_code=404, detail="Job not found.")
 
     query = db.table("candidates").select("*").eq("organization_id", user.organization_id)
@@ -232,7 +225,7 @@ def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_active_s
     for cand in candidates:
         if cand.get("score") and float(cand.get("score") or 0) > 0 and not body.candidate_ids:
             continue
-        scoring = score_candidate(cand, job.data["description"])
+        scoring = score_candidate(cand, job["description"])
         if scoring.get("error"):
             results.append({"id": cand["id"], "name": cand["name"], "error": scoring["error"]})
             continue

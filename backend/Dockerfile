@@ -15,4 +15,5 @@ COPY app ./app
 
 ENV PYTHONUNBUFFERED=1
 
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Render injects PORT at runtime — shell form required so $PORT expands
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"

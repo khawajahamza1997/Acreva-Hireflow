@@ -19,10 +19,22 @@ app.add_middleware(
 )
 
 
+def _cors_headers(request: Request) -> dict[str, str]:
+    origin = request.headers.get("origin", "")
+    allowed = settings.cors_origin_list or ["http://localhost:3000"]
+    if origin in allowed:
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }
+    return {}
+
+
 @app.exception_handler(Exception)
-async def global_exception_handler(_request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
+        headers=_cors_headers(request),
         content={
             "detail": "Something went wrong. Please try again or contact support.",
             "support_email": settings.support_email,
@@ -34,6 +46,11 @@ async def global_exception_handler(_request: Request, exc: Exception):
 @app.get("/health")
 def health():
     return {"status": "ok", "product": "Acreva HireFlow"}
+
+
+@app.get("/")
+def root():
+    return {"status": "ok", "product": "Acreva HireFlow", "docs": "/docs", "health": "/health"}
 
 
 app.include_router(auth.router, prefix="/api/v1")

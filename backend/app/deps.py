@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from app.config import settings
-from app.database import get_admin_client
+from app.database import get_admin_client, exec_maybe_single
 
 security = HTTPBearer(auto_error=False)
 
@@ -48,24 +48,22 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload.")
 
     db = get_admin_client()
-    profile = (
+    profile = exec_maybe_single(
         db.table("profiles")
         .select("*, organizations(name, subscription_status, trial_ends_at)")
         .eq("id", user_id)
-        .maybe_single()
-        .execute()
     )
 
-    if not profile.data:
+    if not profile:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Complete onboarding first.")
 
-    org = profile.data.get("organizations") or {}
+    org = profile.get("organizations") or {}
     return CurrentUser(
         id=user_id,
-        email=profile.data.get("email") or email,
-        organization_id=profile.data["organization_id"],
-        role=profile.data.get("role", "recruiter"),
-        full_name=profile.data.get("full_name") or "",
+        email=profile.get("email") or email,
+        organization_id=profile["organization_id"],
+        role=profile.get("role", "recruiter"),
+        full_name=profile.get("full_name") or "",
         org_name=org.get("name", ""),
         subscription_status=org.get("subscription_status", "trialing"),
         trial_ends_at=org.get("trial_ends_at"),
