@@ -11,40 +11,62 @@ export default function OnboardingPage() {
   const [jobId, setJobId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function runStep(action: () => Promise<void>) {
+    setLoading(true);
+    setError("");
+    try {
+      await action();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function createJob() {
-    const data = await api<{ id: string }>("/api/v1/jobs", {
-      method: "POST",
-      body: JSON.stringify(job),
+    await runStep(async () => {
+      const data = await api<{ id: string }>("/api/v1/jobs", {
+        method: "POST",
+        body: JSON.stringify(job),
+      });
+      setJobId(data.id);
+      setStep(2);
     });
-    setJobId(data.id);
-    setStep(2);
   }
 
   async function uploadCv() {
     if (!file) return;
-    const form = new FormData();
-    form.append("file", file);
-    if (jobId) form.append("job_id", jobId);
-    await api("/api/v1/candidates/upload", { method: "POST", body: form });
-    setStep(3);
+    await runStep(async () => {
+      const form = new FormData();
+      form.append("file", file);
+      if (jobId) form.append("job_id", jobId);
+      await api("/api/v1/candidates/upload", { method: "POST", body: form });
+      setStep(3);
+    });
   }
 
   async function runScore() {
-    await api("/api/v1/scoring/run", {
-      method: "POST",
-      body: JSON.stringify({ job_id: jobId }),
+    await runStep(async () => {
+      await api("/api/v1/scoring/run", {
+        method: "POST",
+        body: JSON.stringify({ job_id: jobId }),
+      });
+      setStep(4);
     });
-    setStep(4);
   }
 
   async function runShortlist() {
-    await api("/api/v1/shortlist/auto", {
-      method: "POST",
-      body: JSON.stringify({ top_n: 3 }),
+    await runStep(async () => {
+      await api("/api/v1/shortlist/auto", {
+        method: "POST",
+        body: JSON.stringify({ top_n: 3 }),
+      });
+      setMessage("Onboarding complete! Explore Dashboard, Outreach, and Pipeline.");
+      setStep(5);
     });
-    setMessage("Onboarding complete! Explore Dashboard, Outreach, and Pipeline.");
-    setStep(5);
   }
 
   const steps = ["Create job", "Upload CV", "Score", "Shortlist", "Done"];
@@ -67,6 +89,8 @@ export default function OnboardingPage() {
         ))}
       </div>
 
+      {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
+
       <div className="card mt-8 space-y-4">
         {step === 1 && (
           <>
@@ -82,8 +106,8 @@ export default function OnboardingPage() {
                 onChange={(e) => setJob({ ...job, description: e.target.value })}
               />
             </div>
-            <button className="btn-primary" onClick={createJob} disabled={job.description.length < 30}>
-              Continue
+            <button className="btn-primary" onClick={createJob} disabled={job.description.length < 30 || loading}>
+              {loading ? "Saving..." : "Continue"}
             </button>
           </>
         )}
@@ -92,8 +116,8 @@ export default function OnboardingPage() {
           <>
             <label className="label">Upload a CV (PDF, DOCX, TXT)</label>
             <input type="file" accept=".pdf,.docx,.txt" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            <button className="btn-primary" onClick={uploadCv} disabled={!file}>
-              Upload & continue
+            <button className="btn-primary" onClick={uploadCv} disabled={!file || loading}>
+              {loading ? "Uploading..." : "Upload & continue"}
             </button>
           </>
         )}
@@ -101,8 +125,8 @@ export default function OnboardingPage() {
         {step === 3 && (
           <>
             <p className="text-sm text-slate-600">Run AI scoring against your job description.</p>
-            <button className="btn-primary" onClick={runScore}>
-              Score candidates
+            <button className="btn-primary" onClick={runScore} disabled={loading}>
+              {loading ? "Scoring..." : "Score candidates"}
             </button>
           </>
         )}
@@ -110,8 +134,8 @@ export default function OnboardingPage() {
         {step === 4 && (
           <>
             <p className="text-sm text-slate-600">Auto-shortlist your top 3 candidates.</p>
-            <button className="btn-primary" onClick={runShortlist}>
-              Shortlist top 3
+            <button className="btn-primary" onClick={runShortlist} disabled={loading}>
+              {loading ? "Shortlisting..." : "Shortlist top 3"}
             </button>
           </>
         )}

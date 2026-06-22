@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
-from app.config import settings
+from gotrue.errors import AuthApiError
 from app.database import get_admin_client, exec_maybe_single
 
 security = HTTPBearer(auto_error=False)
@@ -20,18 +19,18 @@ class CurrentUser:
     trial_ends_at: str | None
 
 
-def _decode_token(token: str) -> dict:
-    if not settings.supabase_jwt_secret:
-        raise HTTPException(status_code=500, detail="JWT secret not configured.")
+def _user_from_token(token: str) -> tuple[str, str]:
+    """Validate JWT via Supabase Auth (works with legacy and new signing keys)."""
+    db = get_admin_client()
     try:
-        return jwt.decode(
-            token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
-    except JWTError as exc:
+        response = db.auth.get_user(token)
+    except AuthApiError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.") from exc
+
+    if not response or not response.user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
+
+    return response.user.id, response.user.email or ""
 
 
 async def get_current_user(
@@ -40,13 +39,7 @@ async def get_current_user(
     if not creds or not creds.credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required.")
 
-    payload = _decode_token(creds.credentials)
-    user_id = payload.get("sub")
-    email = payload.get("email", "")
-
-    if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload.")
-
+    user_id, email = _user_from_token(creds.credentials)
     db = get_admin_client()
     profile = exec_maybe_single(
         db.table("profiles")

@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, setTokens, setUser } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionReason = searchParams.get("reason");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,6 +39,9 @@ export default function LoginPage() {
       <div className="card w-full max-w-md">
         <h1 className="text-2xl font-extrabold">Welcome back</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to Acreva HireFlow</p>
+        {sessionReason && (
+          <p className="text-sm text-orange mt-3">Your session expired. Please sign in again.</p>
+        )}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label className="label">Email</label>

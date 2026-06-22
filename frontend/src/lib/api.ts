@@ -119,6 +119,10 @@ export async function api<T>(
         : Array.isArray(detail)
           ? detail.map((d: { msg?: string }) => d.msg).join(", ")
           : data.message || "Request failed";
+    if (res.status === 401 && token && typeof window !== "undefined") {
+      clearTokens();
+      window.location.href = `/login?reason=${encodeURIComponent(message)}`;
+    }
     throw new Error(message);
   }
   return data as T;
