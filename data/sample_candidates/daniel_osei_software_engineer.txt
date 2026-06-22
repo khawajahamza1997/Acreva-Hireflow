@@ -1,0 +1,33 @@
+Daniel Osei
+Email: daniel.osei@techmail.com
+Phone: +44 7600 778899
+Location: London, UK
+
+PROFESSIONAL SUMMARY
+Full Stack Software Engineer with 4 years of experience building web applications using Python, React, and AWS. Passionate about clean code and scalable architecture. Looking for senior engineering roles.
+
+EXPERIENCE
+
+Software Engineer — DataBridge Ltd, London (2022–Present)
+- Built REST APIs using Python/FastAPI serving 500K+ requests/day
+- Developed React frontend dashboards for enterprise clients
+- Deployed microservices on AWS (Lambda, EC2, RDS)
+- Reduced API response time by 40% through query optimisation
+
+Junior Developer — CodeCraft Agency, London (2020–2022)
+- Developed e-commerce websites using Django and JavaScript
+- Integrated third-party APIs including Stripe and Twilio
+- Participated in Agile sprints and code reviews
+
+SKILLS
+- Python, JavaScript, React, Django, FastAPI
+- AWS, Docker, PostgreSQL, MongoDB
+- REST APIs, Microservices, Git
+- Agile/Scrum methodology
+
+EDUCATION
+BSc Computer Science — University of London (2016–2019)
+
+ACHIEVEMENTS
+- Reduced cloud costs by £30K/year through infrastructure optimisation
+- Open source contributor — 200+ GitHub stars on personal project

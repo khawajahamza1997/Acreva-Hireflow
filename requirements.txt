@@ -1,0 +1,35 @@
+# ============================================================
+# Acreva HireFlow — Python Dependencies
+# Install with: pip install -r requirements.txt
+# ============================================================
+
+# --- Web App Framework ---
+streamlit==1.35.0           # Builds the entire UI (forms, tables, charts, sidebar)
+
+# --- OpenAI (CV Scoring) ---
+openai>=1.52.0              # Calls GPT-4 to score and analyse candidates
+
+# --- CV / Document Parsing ---
+pdfplumber==0.11.0          # Extracts text from PDF CVs (most reliable for CVs)
+python-docx==1.1.2          # Extracts text from Word (.docx) CVs
+
+# --- Google Sheets (CRM/Database) ---
+gspread==6.1.2              # Simple Python client for Google Sheets API
+google-auth==2.29.0         # Authenticates with Google using service account key
+
+# --- Data Handling ---
+pandas==2.2.2               # Organises candidate data into tables
+numpy==1.26.4               # Required by pandas internally
+
+# --- Charts (Dashboard) ---
+plotly==5.22.0              # Interactive charts for score distribution and pipeline
+
+# --- Email Sending ---
+# smtplib is built into Python — no install needed
+
+# --- Environment Variables ---
+python-dotenv==1.0.1        # Loads .env file so your keys stay out of the code
+
+# --- Utilities ---
+uuid==1.30                  # Generates unique candidate IDs
+Pillow==10.3.0              # Image handling (for logo display in app header)

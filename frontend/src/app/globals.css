@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-page text-navy font-sans antialiased;
+}
+
+.btn-primary {
+  @apply bg-electric hover:bg-blue-700 text-white font-semibold rounded-xl px-5 py-2.5 transition;
+}
+
+.btn-secondary {
+  @apply bg-white border border-slate-200 hover:border-electric text-navy font-semibold rounded-xl px-5 py-2.5 transition;
+}
+
+.card {
+  @apply bg-white rounded-2xl border border-slate-200 shadow-sm p-6;
+}
+
+.input {
+  @apply w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-electric/30;
+}
+
+.label {
+  @apply block text-sm font-semibold text-slate-600 mb-1.5;
+}

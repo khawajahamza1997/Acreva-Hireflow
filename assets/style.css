@@ -1,0 +1,706 @@
+/* ============================================================
+   Acreva HireFlow — Tarhan Theme
+   Sidebar: Deep Navy  |  Cards: Clean White
+   Accent 1: Electric Blue  |  Accent 2: Vivid Orange
+   Font: Montserrat
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Variables ──────────────────────────────────────────── */
+:root {
+  /* Sidebar / Shell */
+  --navy:          #0B1E3D;
+  --navy-deep:     #071529;
+  --navy-mid:      #0E2448;
+  --navy-border:   #1A3660;
+  --navy-text:     #7A95BE;
+
+  /* Card Surface */
+  --card:          #FFFFFF;
+  --card-hover:    #F7F9FC;
+  --card-border:   #E4EAF2;
+  --card-shadow:   0 2px 16px rgba(11,30,61,0.10);
+  --card-shadow-h: 0 6px 28px rgba(11,30,61,0.16);
+
+  /* Page Background */
+  --page-bg:       #EEF2F8;
+
+  /* Accents */
+  --electric:      #1A6BFF;
+  --electric-dark: #1458D6;
+  --electric-soft: #EBF1FF;
+  --orange:        #FF6B2B;
+  --orange-dark:   #E05520;
+  --orange-soft:   #FFF0EB;
+
+  /* Text on cards */
+  --text-dark:     #0B1E3D;
+  --text-mid:      #3D5A80;
+  --text-muted:    #7A95BE;
+
+  /* Status */
+  --success:       #16A34A;
+  --success-soft:  #DCFCE7;
+  --warning:       #D97706;
+  --warning-soft:  #FEF3C7;
+  --danger:        #DC2626;
+  --danger-soft:   #FEE2E2;
+  --info-soft:     #EBF1FF;
+
+  /* Shape */
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+}
+
+/* ── Base Reset ─────────────────────────────────────────── */
+html, body, [class*="css"] {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.stApp {
+  background-color: var(--page-bg) !important;
+}
+
+#MainMenu, footer, header { visibility: hidden; }
+
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: var(--page-bg); }
+::-webkit-scrollbar-thumb { background: #C5D3E8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--electric); }
+
+/* ============================================================
+   SIDEBAR — stays deep navy
+   ============================================================ */
+
+[data-testid="stSidebar"] {
+  background: var(--navy) !important;
+  border-right: 1px solid var(--navy-border) !important;
+}
+
+[data-testid="stSidebar"] > div {
+  padding-top: 1.5rem !important;
+}
+
+/* All text inside sidebar */
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] div {
+  color: var(--navy-text) !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* Sidebar metric values */
+[data-testid="stSidebar"] [data-testid="stMetricValue"] {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
+  color: var(--navy-text) !important;
+  font-size: 0.7rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Sidebar metric card */
+[data-testid="stSidebar"] [data-testid="stMetric"] {
+  background: var(--navy-mid) !important;
+  border: 1px solid var(--navy-border) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.65rem 0.75rem !important;
+}
+
+/* Sidebar dividers */
+[data-testid="stSidebar"] hr {
+  border-color: var(--navy-border) !important;
+}
+
+/* Sidebar alerts */
+[data-testid="stSidebar"] .stAlert {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: var(--navy-border) !important;
+}
+
+[data-testid="stSidebar"] .stAlert p {
+  color: #A8C4F0 !important;
+}
+
+/* ============================================================
+   MAIN CONTENT SHELL
+   ============================================================ */
+
+/* Push content area (right of sidebar) */
+.main .block-container {
+  padding: 2rem 2.5rem !important;
+  max-width: 1400px;
+}
+
+/* ============================================================
+   HEADER BANNER — white card with navy text + electric stripe
+   ============================================================ */
+
+.hireflow-header {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.75rem;
+  box-shadow: var(--card-shadow);
+  border-left: 5px solid var(--electric);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.hireflow-header-left h1 {
+  font-size: 1.65rem !important;
+  font-weight: 800 !important;
+  color: var(--text-dark) !important;
+  margin: 0 0 0.2rem 0 !important;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.hireflow-header-left h1 span {
+  color: var(--electric) !important;
+}
+
+.hireflow-header-left p {
+  color: var(--text-muted) !important;
+  font-size: 0.82rem !important;
+  margin: 0 !important;
+  font-weight: 500;
+}
+
+.hireflow-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.trust-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 1rem;
+  background: var(--electric-soft);
+  border: 1px solid rgba(26,107,255,0.2);
+  border-radius: 20px;
+  font-size: 0.72rem;
+  color: var(--electric) !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.header-badge-orange {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 1rem;
+  background: var(--orange-soft);
+  border: 1px solid rgba(255,107,43,0.2);
+  border-radius: 20px;
+  font-size: 0.72rem;
+  color: var(--orange) !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   KPI CARDS — white, clean, metric-first
+   ============================================================ */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.kpi-card {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  padding: 1.2rem 1rem 1rem 1rem;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--card-border);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: default;
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--card-shadow-h);
+}
+
+/* Coloured top bar accent */
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--electric);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.kpi-card.orange::before  { background: var(--orange); }
+.kpi-card.success::before { background: var(--success); }
+.kpi-card.danger::before  { background: var(--danger); }
+.kpi-card.warning::before { background: var(--warning); }
+.kpi-card.muted::before   { background: #C5D3E8; }
+
+.kpi-icon {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  line-height: 1;
+}
+
+.kpi-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-dark) !important;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.kpi-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   SECTION CARDS — white panels for each content block
+   ============================================================ */
+
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--card-shadow);
+}
+
+.section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-dark) !important;
+  margin: 0 0 1.25rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+  letter-spacing: -0.01em;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.section-title .accent {
+  color: var(--electric) !important;
+}
+
+.section-title .accent-orange {
+  color: var(--orange) !important;
+}
+
+/* ============================================================
+   STATUS BADGES
+   ============================================================ */
+
+.badge {
+  display: inline-block;
+  padding: 0.22rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-strong    { background: var(--success-soft); color: var(--success) !important; }
+.badge-moderate  { background: var(--warning-soft); color: var(--warning) !important; }
+.badge-weak      { background: var(--danger-soft);  color: var(--danger) !important;  }
+.badge-new       { background: var(--info-soft);    color: var(--electric) !important; }
+.badge-shortlisted { background: var(--success-soft); color: var(--success) !important; }
+.badge-contacted   { background: var(--info-soft);   color: var(--electric) !important; }
+.badge-rejected    { background: var(--danger-soft);  color: var(--danger) !important;  }
+.badge-orange      { background: var(--orange-soft);  color: var(--orange) !important;  }
+
+/* ============================================================
+   STREAMLIT OVERRIDES
+   ============================================================ */
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+  background: var(--card) !important;
+  border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+  border-bottom: 2px solid var(--card-border) !important;
+  padding: 0 0.5rem !important;
+  gap: 0 !important;
+  box-shadow: var(--card-shadow);
+}
+
+.stTabs [data-baseweb="tab"] {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  padding: 0.75rem 1.1rem !important;
+  border-bottom: 3px solid transparent !important;
+  letter-spacing: 0.01em;
+  transition: color 0.15s ease;
+}
+
+.stTabs [aria-selected="true"] {
+  color: var(--electric) !important;
+  border-bottom: 3px solid var(--electric) !important;
+}
+
+.stTabs [data-baseweb="tab-panel"] {
+  background: var(--card) !important;
+  border: 1px solid var(--card-border) !important;
+  border-top: none !important;
+  border-radius: 0 0 var(--radius-md) var(--radius-md) !important;
+  padding: 1.75rem !important;
+  box-shadow: var(--card-shadow);
+}
+
+/* ── Buttons ── */
+.stButton > button {
+  background: var(--electric) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.82rem !important;
+  padding: 0.55rem 1.4rem !important;
+  letter-spacing: 0.02em;
+  transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.stButton > button:hover {
+  background: var(--electric-dark) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(26,107,255,0.3) !important;
+}
+
+/* Orange button variant — wrap button in a div.btn-orange */
+.btn-orange .stButton > button {
+  background: var(--orange) !important;
+}
+.btn-orange .stButton > button:hover {
+  background: var(--orange-dark) !important;
+  box-shadow: 0 4px 12px rgba(255,107,43,0.3) !important;
+}
+
+/* ── Inputs ── */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stNumberInput > div > div > input {
+  background: #F7F9FC !important;
+  border: 1.5px solid var(--card-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-dark) !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.875rem !important;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+  border-color: var(--electric) !important;
+  box-shadow: 0 0 0 3px rgba(26,107,255,0.1) !important;
+  background: #FFFFFF !important;
+}
+
+/* ── Date Input ── */
+.stDateInput > div > div > input,
+[data-testid="stDateInput"] input,
+[data-baseweb="input"] input {
+  background: #F7F9FC !important;
+  border: 1.5px solid var(--card-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-dark) !important;
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 0.875rem !important;
+}
+
+[data-testid="stDateInput"] > div > div {
+  background: #F7F9FC !important;
+  border: 1.5px solid var(--card-border) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* Global input text colour safety net */
+input, textarea, select {
+  color: var(--text-dark) !important;
+}
+
+/* ── Selectbox ── */
+.stSelectbox > div > div {
+  background: #F7F9FC !important;
+  border: 1.5px solid var(--card-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-dark) !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.stSelectbox > div > div > div {
+  color: var(--text-dark) !important;
+}
+
+/* ── Labels ── */
+.stTextInput label,
+.stTextArea label,
+.stSelectbox label,
+.stNumberInput label,
+.stSlider label,
+.stFileUploader label,
+.stRadio label {
+  color: var(--text-mid) !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* Radio options text */
+.stRadio div[role="radiogroup"] label {
+  color: var(--text-dark) !important;
+  font-size: 0.875rem !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+/* ── File Uploader ── */
+[data-testid="stFileUploader"] {
+  background: #F7F9FC !important;
+  border: 2px dashed var(--card-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 1.25rem !important;
+  transition: border-color 0.2s;
+}
+
+[data-testid="stFileUploader"]:hover {
+  border-color: var(--electric) !important;
+  background: var(--electric-soft) !important;
+}
+
+[data-testid="stFileUploader"] p,
+[data-testid="stFileUploader"] span {
+  color: var(--text-muted) !important;
+}
+
+/* ── DataFrames ── */
+[data-testid="stDataFrame"] {
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  border: 1px solid var(--card-border) !important;
+}
+
+[data-testid="stDataFrame"] th {
+  background: #F0F4FA !important;
+  color: var(--text-mid) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+  padding: 0.65rem 1rem !important;
+  border-bottom: 2px solid var(--card-border) !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+[data-testid="stDataFrame"] td {
+  background: var(--card) !important;
+  color: var(--text-dark) !important;
+  font-size: 0.845rem !important;
+  padding: 0.55rem 1rem !important;
+  border-bottom: 1px solid #EEF2F8 !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+[data-testid="stDataFrame"] tr:hover td {
+  background: var(--electric-soft) !important;
+}
+
+/* ── Slider ── */
+[data-testid="stSlider"] [role="slider"] {
+  background: var(--electric) !important;
+}
+
+/* ── Expanders ── */
+.streamlit-expanderHeader {
+  background: #F7F9FC !important;
+  border: 1px solid var(--card-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* ── Alerts ── */
+.stAlert {
+  border-radius: var(--radius-sm) !important;
+  font-size: 0.85rem !important;
+  font-family: 'Montserrat', sans-serif !important;
+  border-left-width: 4px !important;
+}
+
+/* ── st.metric on main page ── */
+[data-testid="stMetric"] {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 1rem !important;
+}
+
+[data-testid="stMetricLabel"] {
+  color: var(--text-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+[data-testid="stMetricValue"] {
+  color: var(--text-dark) !important;
+  font-weight: 800 !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* ── Dividers ── */
+hr {
+  border: none !important;
+  border-top: 1px solid var(--card-border) !important;
+  margin: 1.25rem 0 !important;
+}
+
+/* ── Spinner ── */
+.stSpinner > div {
+  border-top-color: var(--electric) !important;
+}
+
+/* ── Caption / helper text ── */
+.stCaption, .stCaption p {
+  color: var(--text-muted) !important;
+  font-size: 0.78rem !important;
+}
+
+/* ── Progress bar ── */
+.stProgress > div > div > div {
+  background: var(--electric) !important;
+}
+
+/* ── Checkbox ── */
+.stCheckbox label {
+  color: var(--text-dark) !important;
+  font-size: 0.875rem !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+/* ============================================================
+   SCORE RESULT BLOCK
+   ============================================================ */
+
+.score-block {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-left: 5px solid var(--electric);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin: 0.75rem 0;
+  box-shadow: var(--card-shadow);
+}
+
+.score-block.strong   { border-left-color: var(--success); }
+.score-block.moderate { border-left-color: var(--warning); }
+.score-block.weak     { border-left-color: var(--danger);  }
+
+.score-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-dark) !important;
+  line-height: 1;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+.score-out-of {
+  font-size: 1rem;
+  color: var(--text-muted) !important;
+  font-weight: 500;
+}
+
+.score-reasons { list-style: none; padding-left: 0; margin-top: 0.75rem; }
+
+.score-reasons li {
+  color: var(--text-mid) !important;
+  font-size: 0.875rem;
+  padding: 0.28rem 0 0.28rem 1.25rem;
+  position: relative;
+}
+
+.score-reasons li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--electric);
+  font-weight: 700;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .hireflow-header { flex-direction: column; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .main .block-container { padding: 1rem !important; }
+  .stTabs [data-baseweb="tab-panel"] { padding: 1rem !important; }
+}
+
+/* ============================================================
+   CLIENT DEMO
+   ============================================================ */
+
+.demo-banner {
+  background: var(--orange-soft);
+  border: 1px solid rgba(255, 107, 43, 0.35);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.demo-steps ol {
+  color: var(--text-mid);
+  font-size: 0.88rem;
+  line-height: 2;
+  margin: 0.5rem 0 0 1.1rem;
+  padding: 0;
+}
+
+.demo-steps li strong {
+  color: var(--text-dark);
+}
