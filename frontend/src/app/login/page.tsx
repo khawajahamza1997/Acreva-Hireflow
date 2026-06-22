@@ -1,18 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api, setTokens, setUser } from "@/lib/api";
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const sessionReason = searchParams.get("reason");
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("reason")) {
+      setSessionExpired(true);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +43,7 @@ function LoginForm() {
       <div className="card w-full max-w-md">
         <h1 className="text-2xl font-extrabold">Welcome back</h1>
         <p className="text-sm text-slate-500 mt-1">Sign in to Acreva HireFlow</p>
-        {sessionReason && (
+        {sessionExpired && (
           <p className="text-sm text-orange mt-3">Your session expired. Please sign in again.</p>
         )}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -63,19 +68,5 @@ function LoginForm() {
         </p>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center px-4">
-          <div className="card w-full max-w-md text-center text-sm text-slate-500">Loading...</div>
-        </div>
-      }
-    >
-      <LoginForm />
-    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from app.config import settings
 from app.routers import auth, core, outreach, billing
 
@@ -28,6 +29,24 @@ def _cors_headers(request: Request) -> dict[str, str]:
             "Access-Control-Allow-Credentials": "true",
         }
     return {}
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        headers=_cors_headers(request),
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        headers=_cors_headers(request),
+        content={"detail": exc.errors()},
+    )
 
 
 @app.exception_handler(Exception)

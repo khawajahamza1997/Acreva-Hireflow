@@ -24,7 +24,16 @@ export default function DashboardPage() {
       .catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (error) {
+    return (
+      <div>
+        <h1 className="text-2xl font-extrabold">Recruitment overview</h1>
+        <p className="text-red-600 mt-4">{error}</p>
+        <p className="text-sm text-slate-500 mt-2">If the API was sleeping, wait 30 seconds and refresh.</p>
+      </div>
+    );
+  }
+
   if (!stats) return <p>Loading dashboard...</p>;
 
   return (
@@ -52,6 +61,9 @@ export default function DashboardPage() {
         <div className="card">
           <h2 className="font-bold mb-4">Pipeline by stage</h2>
           <div className="space-y-2">
+            {Object.keys(stats.pipeline).length === 0 && (
+              <p className="text-sm text-slate-500">No candidates yet. Start with Onboarding or upload a CV.</p>
+            )}
             {Object.entries(stats.pipeline).map(([stage, count]) => (
               <div key={stage} className="flex justify-between text-sm">
                 <span>{stage}</span>
@@ -63,6 +75,9 @@ export default function DashboardPage() {
         <div className="card">
           <h2 className="font-bold mb-4">Recent candidates</h2>
           <div className="space-y-3">
+            {stats.recent.length === 0 && (
+              <p className="text-sm text-slate-500">Upload CVs from the Candidates page to see activity here.</p>
+            )}
             {stats.recent.map((c, i) => (
               <div key={i} className="flex justify-between text-sm border-b border-slate-100 pb-2">
                 <span className="font-semibold">{c.name}</span>

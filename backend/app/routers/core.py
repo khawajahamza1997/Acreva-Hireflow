@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
-from app.database import get_admin_client, exec_maybe_single
+from app.database import get_admin_client, exec_maybe_single, exec_rows
 from app.deps import get_current_user, require_role, require_active_subscription, CurrentUser
 from app.schemas import JobCreate, JobUpdate, CandidateUpdate, ScoreRequest, ShortlistRequest
 from app.services.cv_parser import process_cv_bytes
@@ -39,8 +39,11 @@ def create_job(body: JobCreate, user: CurrentUser = Depends(require_active_subsc
         )
         .execute()
     )
-    log_action(user.organization_id, user.id, user.email, "job_created", "job", row.data[0]["id"])
-    return row.data[0]
+    rows = exec_rows(row)
+    if not rows:
+        raise HTTPException(status_code=500, detail="Could not create job.")
+    log_action(user.organization_id, user.id, user.email, "job_created", "job", rows[0]["id"])
+    return rows[0]
 
 
 @router.patch("/jobs/{job_id}")
@@ -191,7 +194,10 @@ async def upload_candidate(
         candidate_id,
         {"filename": filename},
     )
-    return row.data[0]
+    rows = exec_rows(row)
+    if not rows:
+        raise HTTPException(status_code=500, detail="Could not save candidate.")
+    return rows[0]
 
 
 @router.patch("/candidates/{candidate_id}")
