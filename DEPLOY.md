@@ -68,6 +68,8 @@ Deploy the API **first** — you need its URL for the frontend.
 
 ### 2.2 Create a Web Service
 
+**Recommended: use Docker (avoids Python 3.14 build errors on Render)**
+
 1. Click **New +** → **Web Service**  
 2. Connect your GitHub account if asked  
 3. Select the **Acreva-HireFlow** repository  
@@ -76,13 +78,28 @@ Deploy the API **first** — you need its URL for the frontend.
 | Setting | Value |
 |---------|--------|
 | **Name** | `hireflow-api` |
-| **Region** | Choose closest to you (e.g. Frankfurt / Oregon) |
+| **Region** | Choose closest to you |
 | **Branch** | `main` |
 | **Root Directory** | `backend` |
-| **Runtime** | `Python 3` |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| **Language / Runtime** | **Docker** *(not Python)* |
+| **Dockerfile Path** | `Dockerfile` |
 | **Instance Type** | **Free** |
+
+Render will build using `backend/Dockerfile` which pins **Python 3.11** — no Rust/pydantic compile errors.
+
+<details>
+<summary>Alternative: Native Python runtime (only if you won't use Docker)</summary>
+
+| Setting | Value |
+|---------|--------|
+| **Language** | Python 3 |
+| **Build Command** | `pip install --upgrade pip && pip install -r requirements.txt` |
+| **Start Command** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+
+You **must** add environment variable **`PYTHON_VERSION`** = **`3.11.11`** before deploy.
+Without it, Render defaults to Python 3.14 and the build fails on `pydantic-core`.
+
+</details>
 
 ### 2.3 Add environment variables (Render → Environment)
 
@@ -263,7 +280,8 @@ If signup fails, check Render logs: **Render → hireflow-api → Logs**
 | **API very slow first time** | Render free tier cold start — wait 60s or upgrade to $7/mo |
 | **CV upload fails** | Check OpenAI key on Render; check Supabase Storage bucket `cvs` exists |
 | **"Stripe not configured"** | Normal until you add Stripe keys — billing page optional for demos |
-| **Build fails on Render** | Ensure **Root Directory** is `backend` |
+| **Build fails on Render** | Set **Root Directory** to `backend` and env `PYTHON_VERSION=3.11.11` (not 3.14) |
+| **pydantic-core / maturin / Rust error** | Python version too new — force **3.11.11** (see above) |
 | **Build fails on Vercel** | Ensure **Root Directory** is `frontend` |
 
 ---
