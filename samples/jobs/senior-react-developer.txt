@@ -1,0 +1,32 @@
+Senior React Developer — Stouch (Remote)
+
+About the role
+Stouch is hiring a Senior React Developer to build and maintain customer-facing web applications for our recruitment clients. You will work with product, design, and backend engineers in a small agile team.
+
+Requirements
+- 5+ years of professional front-end development
+- Strong React (hooks, context, performance optimization)
+- TypeScript in production applications
+- Next.js or similar SSR/SSG frameworks
+- REST API integration and state management (Redux, Zustand, or React Query)
+- Tailwind CSS or modern CSS-in-JS
+- Git, code review, and CI/CD workflows
+- Clear written communication with non-technical stakeholders
+
+Nice to have
+- Experience with Supabase or Firebase
+- FastAPI or Node backend familiarity
+- SaaS or B2B product experience
+- Automated testing (Jest, React Testing Library, Playwright)
+
+Responsibilities
+- Build responsive dashboards and landing pages
+- Integrate with REST APIs and auth flows
+- Improve performance, accessibility, and UX
+- Participate in sprint planning and technical design
+- Mentor junior developers
+
+What we offer
+- Remote-friendly culture
+- 14-day product trial for new team tools
+- Learning budget and flexible hours

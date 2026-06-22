@@ -41,6 +41,7 @@ class CandidateUpdate(BaseModel):
 class ScoreRequest(BaseModel):
     job_id: str
     candidate_ids: list[str] | None = None
+    rescore: bool = True
 
 
 class ShortlistRequest(BaseModel):

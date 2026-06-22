@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import SuccessBanner from "@/components/SuccessBanner";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -11,12 +12,14 @@ export default function OnboardingPage() {
   const [jobId, setJobId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function runStep(action: () => Promise<void>) {
     setLoading(true);
     setError("");
+    setSuccess("");
     try {
       await action();
     } catch (err) {
@@ -28,11 +31,12 @@ export default function OnboardingPage() {
 
   async function createJob() {
     await runStep(async () => {
-      const data = await api<{ id: string }>("/api/v1/jobs", {
+      const data = await api<{ id: string; title: string }>("/api/v1/jobs", {
         method: "POST",
         body: JSON.stringify(job),
       });
       setJobId(data.id);
+      setSuccess(`Job "${data.title}" created. Upload a CV next.`);
       setStep(2);
     });
   }
@@ -43,28 +47,31 @@ export default function OnboardingPage() {
       const form = new FormData();
       form.append("file", file);
       if (jobId) form.append("job_id", jobId);
-      await api("/api/v1/candidates/upload", { method: "POST", body: form });
+      const created = await api<{ name: string }>("/api/v1/candidates/upload", { method: "POST", body: form });
+      setSuccess(`${created.name}'s CV uploaded and parsed.`);
       setStep(3);
     });
   }
 
   async function runScore() {
     await runStep(async () => {
-      await api("/api/v1/scoring/run", {
+      const res = await api<{ message?: string; scored: number }>("/api/v1/scoring/run", {
         method: "POST",
-        body: JSON.stringify({ job_id: jobId }),
+        body: JSON.stringify({ job_id: jobId, rescore: true }),
       });
+      setSuccess(res.message || `Scored ${res.scored} candidate(s).`);
       setStep(4);
     });
   }
 
   async function runShortlist() {
     await runStep(async () => {
-      await api("/api/v1/shortlist/auto", {
+      const res = await api<{ message: string }>("/api/v1/shortlist/auto", {
         method: "POST",
         body: JSON.stringify({ top_n: 3 }),
       });
       setMessage("Onboarding complete! Explore Dashboard, Outreach, and Pipeline.");
+      setSuccess(res.message);
       setStep(5);
     });
   }
@@ -89,7 +96,10 @@ export default function OnboardingPage() {
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
+      <div className="mt-4 space-y-3">
+        <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </div>
 
       <div className="card mt-8 space-y-4">
         {step === 1 && (

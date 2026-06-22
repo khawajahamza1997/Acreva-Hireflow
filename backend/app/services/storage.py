@@ -18,6 +18,16 @@ def get_signed_url(storage_path: str, expires_in: int = 3600) -> str | None:
     return result.get("signedURL") or result.get("signedUrl")
 
 
+def delete_cv(storage_path: str) -> None:
+    if not storage_path:
+        return
+    db = get_admin_client()
+    try:
+        db.storage.from_("cvs").remove([storage_path])
+    except Exception:
+        pass
+
+
 def _mime(filename: str) -> str:
     lower = filename.lower()
     if lower.endswith(".pdf"):

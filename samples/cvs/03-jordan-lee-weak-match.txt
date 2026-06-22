@@ -1,0 +1,28 @@
+JORDAN LEE
+Email: jordan.lee@email.com | Phone: +1 555 019 8844 | Austin, TX
+
+OBJECTIVE
+Motivated graduate seeking an entry-level opportunity in technology.
+
+SKILLS
+Microsoft Excel, Google Sheets, customer service, data entry, basic Python, HTML fundamentals, social media management, teamwork, communication
+
+EXPERIENCE
+
+Retail Associate | TechMart Stores | 2022 – Present
+- Assisted customers and managed inventory spreadsheets
+- Trained new staff on POS systems
+- Maintained daily sales reports in Excel
+
+Volunteer | Community Help Desk | 2021 – 2022
+- Supported seniors with email setup and basic computer questions
+
+EDUCATION
+Associate Degree in Business Administration — Austin Community College (2022)
+
+PROJECTS
+- Personal budget tracker built with Python and CSV files
+- Created a simple static HTML portfolio page in a weekend workshop
+
+ADDITIONAL
+No professional software development experience yet. Eager to learn programming through on-the-job training.

@@ -1,0 +1,31 @@
+Senior Java Developer — Stouch (Remote)
+
+About the role
+Stouch is hiring a Senior Java Developer to build backend services and APIs for our recruitment platform clients.
+
+Requirements
+- 5+ years of professional Java development
+- Spring Boot and REST API design
+- Microservices architecture
+- PostgreSQL and SQL optimization
+- Maven or Gradle build systems
+- Unit testing with JUnit
+- Git, code review, and CI/CD
+- Experience with cloud deployment (AWS, GCP, or Render)
+
+Nice to have
+- Kotlin experience
+- Docker and Kubernetes
+- Message queues (Kafka, RabbitMQ)
+- FinTech or enterprise SaaS background
+
+Responsibilities
+- Design and implement scalable backend services
+- Integrate with third-party APIs and payment systems
+- Write clean, tested, maintainable code
+- Collaborate with front-end team on API contracts
+- Participate in architecture reviews
+
+What we offer
+- Remote-friendly culture
+- Flexible hours and learning budget

@@ -1,0 +1,31 @@
+SARAH CHEN
+Email: sarah.chen@email.com | Phone: +1 555 010 2001 | San Francisco, CA
+LinkedIn: linkedin.com/in/sarahchen | GitHub: github.com/sarahchen-dev
+
+PROFESSIONAL SUMMARY
+Senior Front-End Engineer with 7 years building React and TypeScript SaaS products. Led dashboard rebuilds, API integrations, and design-system rollouts for B2B clients.
+
+TECHNICAL SKILLS
+React, TypeScript, Next.js, Redux, React Query, Tailwind CSS, JavaScript ES6+, HTML5, CSS3, REST APIs, Git, GitHub Actions, Jest, React Testing Library, Playwright, Supabase, Node.js basics, Agile/Scrum
+
+EXPERIENCE
+
+Senior React Developer | CloudHire SaaS | 2021 – Present
+- Built recruiter dashboards used by 200+ agencies using React, Next.js 14, and TypeScript
+- Integrated Supabase auth and REST APIs; improved page load time by 35%
+- Introduced React Query for server state and Tailwind for consistent UI
+- Mentored 2 junior developers; led code reviews and sprint planning
+
+Front-End Developer | BrightApps | 2018 – 2021
+- Developed customer portals with React hooks and Redux
+- Shipped responsive UI with accessibility improvements (WCAG 2.1)
+- Collaborated with backend team on FastAPI endpoints
+
+Junior Web Developer | Pixel Studio | 2017 – 2018
+- Maintained marketing sites and internal tools with React and Git workflows
+
+EDUCATION
+BSc Computer Science — University of California, Berkeley (2017)
+
+CERTIFICATIONS
+Meta Front-End Developer Professional Certificate (2022)

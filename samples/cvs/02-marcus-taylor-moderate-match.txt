@@ -1,0 +1,27 @@
+MARCUS TAYLOR
+Email: marcus.taylor@email.com | Phone: +44 7700 900123 | Manchester, UK
+
+SUMMARY
+Full-stack developer with 4 years experience. Comfortable with JavaScript and some React. Looking to move deeper into front-end product work.
+
+SKILLS
+JavaScript, React, Vue.js, HTML, CSS, Bootstrap, PHP, Laravel, MySQL, Git, basic TypeScript, REST APIs, WordPress
+
+WORK HISTORY
+
+Software Developer | Northline Digital | 2022 – Present
+- Built client websites and admin panels using Vue.js and Laravel
+- Added React components to an existing internal CRM (limited scope)
+- Worked with REST APIs and MySQL databases
+- Participated in agile stand-ups and ticket grooming
+
+Web Developer | Creative Loop Agency | 2020 – 2022
+- Delivered marketing websites and landing pages
+- Used jQuery, HTML/CSS, and occasional React prototypes
+- Managed deployments with basic Git workflows
+
+EDUCATION
+BSc Information Technology — Manchester Metropolitan University (2020)
+
+NOTES
+Interested in Next.js and modern React patterns; completed online React tutorials but limited production Next.js experience.
