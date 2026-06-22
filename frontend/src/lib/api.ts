@@ -12,9 +12,28 @@ export function getApiBaseUrl(): string {
   return "http://localhost:8000";
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Ping Render so it wakes before signup/login (free tier sleeps when idle). */
+export async function wakeApi(): Promise<boolean> {
+  const apiUrl = getApiBaseUrl();
+  if (apiUrl.includes("localhost")) return true;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${apiUrl}/health`, { cache: "no-store" });
+      if (res.ok) return true;
+    } catch {
+      /* Render still starting */
+    }
+    await sleep(8000);
+  }
+  return false;
+}
+
 function formatFetchError(err: unknown, apiUrl: string): string {
   const msg = err instanceof Error ? err.message : "Network error";
-  if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+  if (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("aborted")) {
     if (apiUrl.includes("localhost")) {
       return (
         "Cannot reach API. Set NEXT_PUBLIC_API_URL on Vercel to " +
@@ -22,8 +41,7 @@ function formatFetchError(err: unknown, apiUrl: string): string {
       );
     }
     return (
-      "Cannot reach API — Render may be waking up (wait 60s and retry). " +
-      `Trying: ${apiUrl}`
+      "API is still waking up on Render (free tier). Wait 30 seconds and click Start free trial again."
     );
   }
   return msg;
@@ -55,6 +73,22 @@ export function getUser(): Record<string, string> | null {
   return raw ? JSON.parse(raw) : null;
 }
 
+async function fetchApi(path: string, options: RequestInit, apiUrl: string): Promise<Response> {
+  const url = `${apiUrl}${path}`;
+  const maxAttempts = apiUrl.includes("localhost") ? 1 : 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fetch(url, options);
+    } catch (err) {
+      if (attempt === maxAttempts) throw err;
+      await wakeApi();
+    }
+  }
+
+  throw new Error("Failed to fetch");
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {}
@@ -71,7 +105,7 @@ export async function api<T>(
 
   let res: Response;
   try {
-    res = await fetch(`${apiUrl}${path}`, { ...options, headers });
+    res = await fetchApi(path, { ...options, headers }, apiUrl);
   } catch (err) {
     throw new Error(formatFetchError(err, apiUrl));
   }

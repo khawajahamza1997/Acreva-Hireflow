@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, setTokens, setUser } from "@/lib/api";
+import { api, setTokens, setUser, wakeApi } from "@/lib/api";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -15,12 +15,18 @@ export default function SignUpPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [apiReady, setApiReady] = useState(false);
+
+  useEffect(() => {
+    wakeApi().then(setApiReady);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
+      if (!apiReady) await wakeApi();
       const data = await api<{ access_token: string; refresh_token: string; user: object }>(
         "/api/v1/auth/signup",
         { method: "POST", body: JSON.stringify(form) }
@@ -41,6 +47,9 @@ export default function SignUpPage() {
         <div className="text-xs font-bold text-orange uppercase tracking-wider">14-day free trial</div>
         <h1 className="text-2xl font-extrabold mt-2">Create your workspace</h1>
         <p className="text-sm text-slate-500 mt-1">Set up your organization in under a minute.</p>
+        {!apiReady && (
+          <p className="text-xs text-orange mt-2">Waking up server (first visit may take ~30s on free hosting)...</p>
+        )}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {[
             ["full_name", "Your name"],
@@ -70,7 +79,7 @@ export default function SignUpPage() {
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button className="btn-primary w-full" disabled={loading}>
-            {loading ? "Creating..." : "Start free trial"}
+            {loading ? "Creating..." : apiReady ? "Start free trial" : "Waiting for server..."}
           </button>
         </form>
         <p className="text-xs text-slate-400 mt-4">
