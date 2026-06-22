@@ -1,4 +1,33 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+/** Production Render API — used when NEXT_PUBLIC_API_URL is missing on Vercel */
+const PRODUCTION_API = "https://hireflow-api-dx5u.onrender.com";
+
+export function getApiBaseUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+
+  if (typeof window !== "undefined" && window.location.hostname.includes("vercel.app")) {
+    return PRODUCTION_API;
+  }
+
+  return "http://localhost:8000";
+}
+
+function formatFetchError(err: unknown, apiUrl: string): string {
+  const msg = err instanceof Error ? err.message : "Network error";
+  if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+    if (apiUrl.includes("localhost")) {
+      return (
+        "Cannot reach API. Set NEXT_PUBLIC_API_URL on Vercel to " +
+        PRODUCTION_API + " and redeploy."
+      );
+    }
+    return (
+      "Cannot reach API — Render may be waking up (wait 60s and retry). " +
+      `Trying: ${apiUrl}`
+    );
+  }
+  return msg;
+}
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -30,6 +59,7 @@ export async function api<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const apiUrl = getApiBaseUrl();
   const token = getToken();
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
@@ -39,13 +69,25 @@ export async function api<T>(
   }
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${apiUrl}${path}`, { ...options, headers });
+  } catch (err) {
+    throw new Error(formatFetchError(err, apiUrl));
+  }
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.detail || data.message || "Request failed");
+    const detail = data.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d: { msg?: string }) => d.msg).join(", ")
+          : data.message || "Request failed";
+    throw new Error(message);
   }
   return data as T;
 }
 
-export { API_URL };
+export const API_URL = getApiBaseUrl();

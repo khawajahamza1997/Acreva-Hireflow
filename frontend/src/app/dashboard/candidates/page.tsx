@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 type Candidate = {
@@ -21,16 +21,16 @@ export default function CandidatesPage() {
   const [status, setStatus] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (status) params.set("status", status);
     setRows(await api<Candidate[]>(`/api/v1/candidates?${params}`));
-  }
+  }, [q, status]);
 
   useEffect(() => {
     load();
-  }, [q, status]);
+  }, [load]);
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
