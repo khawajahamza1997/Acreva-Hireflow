@@ -3,7 +3,14 @@ from app.database import get_admin_client, exec_maybe_single
 from app.deps import get_current_user, require_role, require_active_subscription, CurrentUser
 from app.schemas import SendEmailRequest, EmailTemplateUpdate, InviteMemberRequest, OrganizationUpdate, ProfileUpdate
 from app.config import settings
-from app.services.email_service import send_email, render_template, DEFAULT_TEMPLATES, email_is_configured
+from app.services.email_service import (
+    send_email,
+    render_template,
+    DEFAULT_TEMPLATES,
+    email_is_configured,
+    is_resend_sandbox_from,
+    resolve_outreach_recipient,
+)
 from app.services.audit import log_action, list_logs
 from app.services.org_setup import ensure_default_templates
 
@@ -102,7 +109,14 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         )
         return {"success": True, "demo": True, "message": "Demo mode — email not sent."}
 
-    to_email = str(body.send_to_email or cand.get("email") or "")
+    try:
+        to_email, redirect_note = resolve_outreach_recipient(
+            cand.get("email") or "",
+            str(body.send_to_email) if body.send_to_email else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     result = send_email(to_email, body.subject, body.body)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -117,22 +131,36 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         body.candidate_id,
         {"subject": body.subject, "to": to_email},
     )
-    return {"success": True, "demo": False, "message": f"Email sent to {to_email}."}
+    message = f"Email sent to {to_email}."
+    if redirect_note:
+        message = redirect_note
+    return {"success": True, "demo": False, "message": message}
 
 
 @router.get("/outreach/email-status")
 def outreach_email_status(user: CurrentUser = Depends(require_active_subscription)):
     configured = email_is_configured()
+    test_mode = is_resend_sandbox_from()
+    allowed = (settings.resend_test_to_email or "").strip()
+    if configured and test_mode:
+        hint = (
+            f"Resend test mode: emails can only go to {allowed}."
+            if allowed
+            else "Add RESEND_TEST_TO_EMAIL on Render (your resend.com signup email, e.g. khawajahamzaj@gmail.com)."
+        )
+    elif configured:
+        hint = "Email is ready. Uncheck Demo mode and send."
+    else:
+        hint = (
+            "Add RESEND_API_KEY (starts with re_) and EMAIL_FROM=Acreva HireFlow <onboarding@resend.dev> on Render."
+        )
     return {
         "configured": configured,
+        "test_mode": test_mode,
         "from_address": settings.email_from,
         "your_email": user.email,
-        "hint": (
-            "Add a valid RESEND_API_KEY (starts with re_) from resend.com/api-keys. "
-            "Use EMAIL_FROM=Acreva HireFlow <onboarding@resend.dev> for testing."
-            if not configured
-            else "Email is ready. Uncheck Demo mode and send."
-        ),
+        "allowed_test_recipient": allowed or None,
+        "hint": hint,
     }
 
 

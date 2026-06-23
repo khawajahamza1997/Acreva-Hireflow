@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     resend_api_key: str = ""
     email_from: str = "Acreva HireFlow <noreply@acreva.com>"
+    resend_test_to_email: str = ""
 
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""

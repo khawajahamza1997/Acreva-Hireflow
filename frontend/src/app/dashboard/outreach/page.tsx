@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, getUser } from "@/lib/api";
+import { api } from "@/lib/api";
 import SuccessBanner from "@/components/SuccessBanner";
 
 type Candidate = { id: string; name: string; email: string };
 type Template = { template_type: string; subject: string; body: string };
-type EmailStatus = { configured: boolean; from_address: string; your_email: string; hint: string };
+type EmailStatus = {
+  configured: boolean;
+  test_mode: boolean;
+  from_address: string;
+  your_email: string;
+  allowed_test_recipient: string | null;
+  hint: string;
+};
 
 export default function OutreachPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -17,10 +24,13 @@ export default function OutreachPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [demoMode, setDemoMode] = useState(true);
-  const [sendToMe, setSendToMe] = useState(true);
+  const [sendTestEmail, setSendTestEmail] = useState(true);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const testRecipient =
+    emailStatus?.allowed_test_recipient || emailStatus?.your_email || "your Resend signup email";
 
   useEffect(() => {
     Promise.all([
@@ -65,7 +75,6 @@ export default function OutreachPage() {
     setError("");
     setSuccess("");
     try {
-      const user = getUser();
       const payload: Record<string, unknown> = {
         candidate_id: candidateId,
         template_type: templateType,
@@ -73,8 +82,10 @@ export default function OutreachPage() {
         body,
         demo_mode: demoMode,
       };
-      if (!demoMode && sendToMe && user?.email) {
-        payload.send_to_email = user.email;
+      if (!demoMode && sendTestEmail && emailStatus?.test_mode) {
+        payload.send_to_email = testRecipient;
+      } else if (!demoMode && sendTestEmail) {
+        payload.send_to_email = emailStatus?.your_email;
       }
 
       const res = await api<{ success: boolean; demo?: boolean; message?: string }>("/api/v1/outreach/send", {
@@ -94,12 +105,26 @@ export default function OutreachPage() {
       <h1 className="text-2xl font-extrabold">Outreach</h1>
 
       {emailStatus && (
-        <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${emailStatus.configured ? "bg-green-50 border-green-200 text-green-800" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
-          <p className="font-semibold">{emailStatus.configured ? "Email ready" : "Email not configured on Render"}</p>
+        <div
+          className={`mt-4 rounded-xl border px-4 py-3 text-sm ${
+            emailStatus.configured
+              ? emailStatus.test_mode
+                ? "bg-amber-50 border-amber-200 text-amber-900"
+                : "bg-green-50 border-green-200 text-green-800"
+              : "bg-amber-50 border-amber-200 text-amber-900"
+          }`}
+        >
+          <p className="font-semibold">
+            {emailStatus.configured
+              ? emailStatus.test_mode
+                ? "Resend test mode (onboarding@resend.dev)"
+                : "Email ready"
+              : "Email not configured on Render"}
+          </p>
           <p className="mt-1">{emailStatus.hint}</p>
-          {!emailStatus.configured && (
+          {emailStatus.test_mode && !emailStatus.allowed_test_recipient && (
             <p className="mt-2 text-xs">
-              Render env: <code>RESEND_API_KEY</code> + <code>EMAIL_FROM=Acreva HireFlow &lt;onboarding@resend.dev&gt;</code>
+              Render env: <code>RESEND_TEST_TO_EMAIL=khawajahamzaj@gmail.com</code>
             </p>
           )}
         </div>
@@ -111,8 +136,10 @@ export default function OutreachPage() {
       </label>
       {!demoMode && (
         <label className="flex items-center gap-2 mt-2 text-sm">
-          <input type="checkbox" checked={sendToMe} onChange={(e) => setSendToMe(e.target.checked)} />
-          Send to my inbox ({emailStatus?.your_email || getUser()?.email || "your login email"}) for video demo
+          <input type="checkbox" checked={sendTestEmail} onChange={(e) => setSendTestEmail(e.target.checked)} />
+          {emailStatus?.test_mode
+            ? `Send test email to ${testRecipient} (required by Resend test mode)`
+            : `Send to my inbox (${emailStatus?.your_email}) for video demo`}
         </label>
       )}
 

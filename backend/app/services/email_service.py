@@ -83,3 +83,37 @@ def send_email(to_email: str, subject: str, body: str) -> dict:
 
 def email_is_configured() -> bool:
     return bool(settings.resend_api_key and settings.resend_api_key.startswith("re_") and settings.email_from)
+
+
+def is_resend_sandbox_from() -> bool:
+    return "resend.dev" in (settings.email_from or "")
+
+
+def resolve_outreach_recipient(
+    candidate_email: str,
+    send_to_override: str | None = None,
+) -> tuple[str, str | None]:
+    """
+    Pick the recipient address. Returns (email, note_for_user).
+    With onboarding@resend.dev, Resend only delivers to RESEND_TEST_TO_EMAIL.
+    """
+    candidate_email = (candidate_email or "").strip()
+    override = (send_to_override or "").strip()
+
+    if is_resend_sandbox_from():
+        allowed = (settings.resend_test_to_email or "").strip()
+        if not allowed:
+            raise ValueError(
+                "Set RESEND_TEST_TO_EMAIL on Render to the email you used to sign up at resend.com "
+                "(e.g. khawajahamzaj@gmail.com). Resend test mode only sends to that address."
+            )
+        if override or not candidate_email or candidate_email.endswith(("@email.com", "@example.com")):
+            note = None
+            if override and override.lower() != allowed.lower():
+                note = f"Resend test mode: email sent to {allowed} (not {override})."
+            elif candidate_email and candidate_email.lower() != allowed.lower():
+                note = f"Resend test mode: demo email sent to {allowed} instead of {candidate_email}."
+            return allowed, note
+        return candidate_email, None
+
+    return override or candidate_email, None
