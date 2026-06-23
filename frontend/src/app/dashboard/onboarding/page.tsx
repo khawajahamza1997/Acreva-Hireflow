@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { uploadCvBatch } from "@/lib/upload";
 import SuccessBanner from "@/components/SuccessBanner";
 
 export default function OnboardingPage() {
@@ -10,7 +11,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [job, setJob] = useState({ title: "", description: "" });
   const [jobId, setJobId] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -36,19 +37,16 @@ export default function OnboardingPage() {
         body: JSON.stringify(job),
       });
       setJobId(data.id);
-      setSuccess(`Job "${data.title}" created. Upload a CV next.`);
+      setSuccess(`Job "${data.title}" created. Upload CVs next (select all 3 sample files at once).`);
       setStep(2);
     });
   }
 
-  async function uploadCv() {
-    if (!file) return;
+  async function uploadCvs() {
+    if (files.length === 0) return;
     await runStep(async () => {
-      const form = new FormData();
-      form.append("file", file);
-      if (jobId) form.append("job_id", jobId);
-      const created = await api<{ name: string }>("/api/v1/candidates/upload", { method: "POST", body: form });
-      setSuccess(`${created.name}'s CV uploaded and parsed.`);
+      const res = await uploadCvBatch(files, jobId);
+      setSuccess(res.message + (res.failed ? ` (${res.failed} failed)` : ""));
       setStep(3);
     });
   }
@@ -76,7 +74,7 @@ export default function OnboardingPage() {
     });
   }
 
-  const steps = ["Create job", "Upload CV", "Score", "Shortlist", "Done"];
+  const steps = ["Create job", "Upload CVs", "Score", "Shortlist", "Done"];
 
   return (
     <div className="max-w-2xl">
@@ -124,19 +122,30 @@ export default function OnboardingPage() {
 
         {step === 2 && (
           <>
-            <label className="label">Upload a CV (PDF, DOCX, TXT)</label>
-            <input type="file" accept=".pdf,.docx,.txt" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            <button className="btn-primary" onClick={uploadCv} disabled={!file || loading}>
-              {loading ? "Uploading..." : "Upload & continue"}
+            <label className="label">Upload CVs (PDF, DOCX, TXT) — select multiple files</label>
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt"
+              multiple
+              onChange={(e) => setFiles(Array.from(e.target.files || []))}
+            />
+            {files.length > 0 && (
+              <p className="text-xs text-slate-500">{files.length} file(s) selected: {files.map((f) => f.name).join(", ")}</p>
+            )}
+            <p className="text-xs text-slate-500">
+              Tip: select all 3 files from <code className="text-electric">samples/cvs/</code> at once.
+            </p>
+            <button className="btn-primary" onClick={uploadCvs} disabled={files.length === 0 || loading}>
+              {loading ? `Uploading ${files.length} CV(s)...` : `Upload ${files.length || ""} CV(s) & continue`}
             </button>
           </>
         )}
 
         {step === 3 && (
           <>
-            <p className="text-sm text-slate-600">Run AI scoring against your job description.</p>
+            <p className="text-sm text-slate-600">Run AI scoring against your job description (may take 30–60s).</p>
             <button className="btn-primary" onClick={runScore} disabled={loading}>
-              {loading ? "Scoring..." : "Score candidates"}
+              {loading ? "Scoring..." : "Score all candidates"}
             </button>
           </>
         )}
@@ -153,7 +162,10 @@ export default function OnboardingPage() {
         {step === 5 && (
           <>
             <p className="text-green-700 font-semibold">{message}</p>
-            <button className="btn-primary" onClick={() => router.push("/dashboard")}>
+            <button className="btn-primary" onClick={() => router.push("/dashboard/outreach")}>
+              Go to Outreach (send email)
+            </button>
+            <button className="btn-secondary ml-3" onClick={() => router.push("/dashboard")}>
               Go to dashboard
             </button>
           </>

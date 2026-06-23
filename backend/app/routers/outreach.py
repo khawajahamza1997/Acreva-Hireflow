@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_admin_client, exec_maybe_single
 from app.deps import get_current_user, require_role, require_active_subscription, CurrentUser
 from app.schemas import SendEmailRequest, EmailTemplateUpdate, InviteMemberRequest, OrganizationUpdate, ProfileUpdate
-from app.services.email_service import send_email, render_template, DEFAULT_TEMPLATES
+from app.config import settings
+from app.services.email_service import send_email, render_template, DEFAULT_TEMPLATES, email_is_configured
 from app.services.audit import log_action, list_logs
 from app.services.org_setup import ensure_default_templates
 
@@ -101,7 +102,8 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         )
         return {"success": True, "demo": True, "message": "Demo mode — email not sent."}
 
-    result = send_email(cand.get("email", ""), body.subject, body.body)
+    to_email = str(body.send_to_email or cand.get("email") or "")
+    result = send_email(to_email, body.subject, body.body)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
 
@@ -113,9 +115,25 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         "email_sent",
         "candidate",
         body.candidate_id,
-        {"subject": body.subject, "to": cand.get("email")},
+        {"subject": body.subject, "to": to_email},
     )
-    return {"success": True, "demo": False}
+    return {"success": True, "demo": False, "message": f"Email sent to {to_email}."}
+
+
+@router.get("/outreach/email-status")
+def outreach_email_status(user: CurrentUser = Depends(require_active_subscription)):
+    configured = email_is_configured()
+    return {
+        "configured": configured,
+        "from_address": settings.email_from,
+        "your_email": user.email,
+        "hint": (
+            "Add RESEND_API_KEY and EMAIL_FROM on Render. "
+            "For testing use: Acreva HireFlow <onboarding@resend.dev>"
+            if not configured
+            else "Email is ready. Uncheck Demo mode and send."
+        ),
+    }
 
 
 @router.get("/audit-logs")

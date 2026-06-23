@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, getUser } from "@/lib/api";
 import SuccessBanner from "@/components/SuccessBanner";
 
 type Candidate = { id: string; name: string; email: string };
 type Template = { template_type: string; subject: string; body: string };
+type EmailStatus = { configured: boolean; from_address: string; your_email: string; hint: string };
 
 export default function OutreachPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus | null>(null);
   const [candidateId, setCandidateId] = useState("");
   const [templateType, setTemplateType] = useState("interview_invite");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [demoMode, setDemoMode] = useState(true);
+  const [sendToMe, setSendToMe] = useState(true);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,10 +26,12 @@ export default function OutreachPage() {
     Promise.all([
       api<Candidate[]>("/api/v1/candidates?shortlisted=true"),
       api<Template[]>("/api/v1/email-templates"),
+      api<EmailStatus>("/api/v1/outreach/email-status"),
     ])
-      .then(([c, t]) => {
+      .then(([c, t, status]) => {
         setCandidates(c);
         setTemplates(t);
+        setEmailStatus(status);
       })
       .catch((e) => setError(e.message));
   }, []);
@@ -60,11 +65,23 @@ export default function OutreachPage() {
     setError("");
     setSuccess("");
     try {
+      const user = getUser();
+      const payload: Record<string, unknown> = {
+        candidate_id: candidateId,
+        template_type: templateType,
+        subject,
+        body,
+        demo_mode: demoMode,
+      };
+      if (!demoMode && sendToMe && user?.email) {
+        payload.send_to_email = user.email;
+      }
+
       const res = await api<{ success: boolean; demo?: boolean; message?: string }>("/api/v1/outreach/send", {
         method: "POST",
-        body: JSON.stringify({ candidate_id: candidateId, template_type: templateType, subject, body, demo_mode: demoMode }),
+        body: JSON.stringify(payload),
       });
-      setSuccess(res.demo ? "Demo mode — email not sent." : "Email sent successfully.");
+      setSuccess(res.message || (res.demo ? "Demo mode — email not sent." : "Email sent successfully."));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Send failed.");
     } finally {
@@ -75,10 +92,29 @@ export default function OutreachPage() {
   return (
     <div className="max-w-4xl">
       <h1 className="text-2xl font-extrabold">Outreach</h1>
+
+      {emailStatus && (
+        <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${emailStatus.configured ? "bg-green-50 border-green-200 text-green-800" : "bg-amber-50 border-amber-200 text-amber-900"}`}>
+          <p className="font-semibold">{emailStatus.configured ? "Email ready" : "Email not configured on Render"}</p>
+          <p className="mt-1">{emailStatus.hint}</p>
+          {!emailStatus.configured && (
+            <p className="mt-2 text-xs">
+              Render env: <code>RESEND_API_KEY</code> + <code>EMAIL_FROM=Acreva HireFlow &lt;onboarding@resend.dev&gt;</code>
+            </p>
+          )}
+        </div>
+      )}
+
       <label className="flex items-center gap-2 mt-4 text-sm">
         <input type="checkbox" checked={demoMode} onChange={(e) => setDemoMode(e.target.checked)} />
-        Demo mode (preview only — safe for presentations)
+        Demo mode (no email sent — safe for dry runs)
       </label>
+      {!demoMode && (
+        <label className="flex items-center gap-2 mt-2 text-sm">
+          <input type="checkbox" checked={sendToMe} onChange={(e) => setSendToMe(e.target.checked)} />
+          Send to my inbox ({emailStatus?.your_email || getUser()?.email || "your login email"}) for video demo
+        </label>
+      )}
 
       <div className="mt-4 space-y-3">
         <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
@@ -111,7 +147,7 @@ export default function OutreachPage() {
           <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
           <textarea className="input min-h-[220px]" value={body} onChange={(e) => setBody(e.target.value)} />
           <button className="btn-primary" onClick={send} disabled={!candidateId || loading}>
-            {loading ? "Sending..." : demoMode ? "Preview send" : "Send email"}
+            {loading ? "Sending..." : demoMode ? "Preview send" : "Send real email"}
           </button>
         </div>
       </div>

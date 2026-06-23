@@ -54,6 +54,7 @@ class SendEmailRequest(BaseModel):
     subject: str
     body: str
     demo_mode: bool = False
+    send_to_email: EmailStr | None = None
 
 
 class EmailTemplateUpdate(BaseModel):

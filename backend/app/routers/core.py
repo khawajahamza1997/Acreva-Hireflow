@@ -133,20 +133,15 @@ def get_candidate(candidate_id: str, user: CurrentUser = Depends(require_active_
     return json_safe(data)
 
 
-@router.post("/candidates/upload")
-async def upload_candidate(
-    file: UploadFile = File(...),
-    job_id: str | None = Form(None),
-    user: CurrentUser = Depends(require_active_subscription),
-):
-    if user.role == "viewer":
-        raise HTTPException(status_code=403, detail="Viewers cannot upload CVs.")
-
-    content = await file.read()
-    filename = file.filename or "cv.txt"
+async def _save_uploaded_cv(
+    content: bytes,
+    filename: str,
+    user: CurrentUser,
+    job_id: str | None,
+) -> dict:
     parsed = process_cv_bytes(content, filename)
     if parsed.get("parse_error"):
-        raise HTTPException(status_code=400, detail=parsed["parse_error"])
+        raise HTTPException(status_code=400, detail=f"{filename}: {parsed['parse_error']}")
 
     db = get_admin_client()
     candidate_id = str(uuid.uuid4())
@@ -162,7 +157,6 @@ async def upload_candidate(
             raise HTTPException(status_code=404, detail="Job not found.")
 
     storage_path = upload_cv(user.organization_id, candidate_id, filename, content)
-
     row = (
         db.table("candidates")
         .insert(
@@ -188,7 +182,7 @@ async def upload_candidate(
     )
     rows = exec_rows(row)
     if not rows:
-        raise HTTPException(status_code=500, detail="Could not save candidate.")
+        raise HTTPException(status_code=500, detail=f"Could not save {filename}.")
     log_action(
         user.organization_id,
         user.id,
@@ -199,6 +193,57 @@ async def upload_candidate(
         {"filename": filename},
     )
     return json_safe(rows[0])
+
+
+@router.post("/candidates/upload")
+async def upload_candidate(
+    file: UploadFile = File(...),
+    job_id: str | None = Form(None),
+    user: CurrentUser = Depends(require_active_subscription),
+):
+    if user.role == "viewer":
+        raise HTTPException(status_code=403, detail="Viewers cannot upload CVs.")
+    content = await file.read()
+    filename = file.filename or "cv.txt"
+    return await _save_uploaded_cv(content, filename, user, job_id)
+
+
+@router.post("/candidates/upload-batch")
+async def upload_candidates_batch(
+    files: list[UploadFile] = File(...),
+    job_id: str | None = Form(None),
+    user: CurrentUser = Depends(require_active_subscription),
+):
+    if user.role == "viewer":
+        raise HTTPException(status_code=403, detail="Viewers cannot upload CVs.")
+    if not files:
+        raise HTTPException(status_code=400, detail="Select at least one CV file.")
+
+    saved: list[dict] = []
+    errors: list[dict] = []
+    for upload in files:
+        filename = upload.filename or "cv.txt"
+        try:
+            content = await upload.read()
+            saved.append(await _save_uploaded_cv(content, filename, user, job_id))
+        except HTTPException as exc:
+            errors.append({"filename": filename, "error": exc.detail})
+        except Exception as exc:
+            errors.append({"filename": filename, "error": str(exc)})
+
+    if not saved and errors:
+        raise HTTPException(status_code=400, detail=errors[0]["error"])
+
+    names = [c.get("name", "Candidate") for c in saved]
+    return json_safe(
+        {
+            "uploaded": len(saved),
+            "failed": len(errors),
+            "candidates": saved,
+            "errors": errors,
+            "message": f"Uploaded {len(saved)} CV(s): {', '.join(names)}.",
+        }
+    )
 
 
 @router.patch("/candidates/{candidate_id}")

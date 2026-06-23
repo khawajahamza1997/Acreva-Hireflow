@@ -57,7 +57,7 @@ def render_template(template: dict, placeholders: dict) -> dict:
 
 def send_email(to_email: str, subject: str, body: str) -> dict:
     if not settings.resend_api_key:
-        return {"success": False, "error": "RESEND_API_KEY not configured."}
+        return {"success": False, "error": "RESEND_API_KEY not configured on Render."}
     if not to_email or "@" not in to_email:
         return {"success": False, "error": "Invalid recipient email."}
 
@@ -74,3 +74,7 @@ def send_email(to_email: str, subject: str, body: str) -> dict:
         return {"success": True, "error": None}
     except Exception as exc:
         return {"success": False, "error": str(exc)}
+
+
+def email_is_configured() -> bool:
+    return bool(settings.resend_api_key and settings.email_from)

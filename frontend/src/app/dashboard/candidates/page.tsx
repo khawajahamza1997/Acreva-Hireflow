@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { uploadCvBatch } from "@/lib/upload";
 import SuccessBanner from "@/components/SuccessBanner";
 
 type Candidate = {
@@ -20,7 +21,7 @@ export default function CandidatesPage() {
   const [rows, setRows] = useState<Candidate[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -38,18 +39,14 @@ export default function CandidatesPage() {
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
     setUploading(true);
     setError("");
     setSuccess("");
     try {
-      const created = await api<{ name: string }>("/api/v1/candidates/upload", { method: "POST", body: (() => {
-        const form = new FormData();
-        form.append("file", file);
-        return form;
-      })() });
-      setFile(null);
-      setSuccess(`CV uploaded and parsed — ${created.name} added to your pipeline.`);
+      const res = await uploadCvBatch(files);
+      setFiles([]);
+      setSuccess(res.message + (res.failed ? ` (${res.failed} failed)` : ""));
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
@@ -90,13 +87,21 @@ export default function CandidatesPage() {
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
 
-      <form onSubmit={upload} className="card mt-6 flex flex-wrap items-end gap-3">
+      <form onSubmit={upload} className="card mt-6 space-y-3">
         <div>
-          <label className="label">Upload CV</label>
-          <input type="file" accept=".pdf,.docx,.txt" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          <label className="label">Upload CVs (select multiple files)</label>
+          <input
+            type="file"
+            accept=".pdf,.docx,.txt"
+            multiple
+            onChange={(e) => setFiles(Array.from(e.target.files || []))}
+          />
+          {files.length > 0 && (
+            <p className="text-xs text-slate-500 mt-2">{files.length} file(s): {files.map((f) => f.name).join(", ")}</p>
+          )}
         </div>
-        <button className="btn-primary" disabled={!file || uploading}>
-          {uploading ? "Uploading..." : "Parse & save"}
+        <button className="btn-primary" disabled={files.length === 0 || uploading}>
+          {uploading ? `Uploading ${files.length} CV(s)...` : `Parse & save ${files.length ? `(${files.length})` : ""}`}
         </button>
       </form>
 
@@ -115,7 +120,7 @@ export default function CandidatesPage() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="py-6 text-slate-500 text-center">
-                  No candidates yet. Upload a CV to get started.
+                  No candidates yet. Upload CVs to get started.
                 </td>
               </tr>
             )}
