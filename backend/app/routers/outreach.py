@@ -128,8 +128,8 @@ def outreach_email_status(user: CurrentUser = Depends(require_active_subscriptio
         "from_address": settings.email_from,
         "your_email": user.email,
         "hint": (
-            "Add RESEND_API_KEY and EMAIL_FROM on Render. "
-            "For testing use: Acreva HireFlow <onboarding@resend.dev>"
+            "Add a valid RESEND_API_KEY (starts with re_) from resend.com/api-keys. "
+            "Use EMAIL_FROM=Acreva HireFlow <onboarding@resend.dev> for testing."
             if not configured
             else "Email is ready. Uncheck Demo mode and send."
         ),

@@ -58,6 +58,11 @@ def render_template(template: dict, placeholders: dict) -> dict:
 def send_email(to_email: str, subject: str, body: str) -> dict:
     if not settings.resend_api_key:
         return {"success": False, "error": "RESEND_API_KEY not configured on Render."}
+    if not settings.resend_api_key.startswith("re_"):
+        return {
+            "success": False,
+            "error": "RESEND_API_KEY looks wrong — it must start with re_ from resend.com/api-keys (not a Supabase key).",
+        }
     if not to_email or "@" not in to_email:
         return {"success": False, "error": "Invalid recipient email."}
 
@@ -77,4 +82,4 @@ def send_email(to_email: str, subject: str, body: str) -> dict:
 
 
 def email_is_configured() -> bool:
-    return bool(settings.resend_api_key and settings.email_from)
+    return bool(settings.resend_api_key and settings.resend_api_key.startswith("re_") and settings.email_from)
