@@ -66,7 +66,7 @@ export default function ScoringPage() {
           ))}
         </select>
         <button className="btn-primary" onClick={run} disabled={!jobId || loading}>
-          {loading ? "Scoring..." : "Score all candidates for this job"}
+          {loading ? "Scoring all candidates (may take 30–60s)..." : "Score all candidates for this job"}
         </button>
       </div>
       {result && (

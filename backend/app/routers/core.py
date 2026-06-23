@@ -6,6 +6,7 @@ from app.services.cv_parser import process_cv_bytes
 from app.services.scoring import score_candidate
 from app.services.storage import upload_cv, get_signed_url, delete_cv
 from app.services.audit import log_action
+from app.utils.json_safe import json_safe
 import uuid
 
 router = APIRouter(tags=["core"])
@@ -21,7 +22,7 @@ def list_jobs(user: CurrentUser = Depends(require_active_subscription)):
         .order("created_at", desc=True)
         .execute()
     )
-    return result.data or []
+    return json_safe(result.data or [])
 
 
 @router.post("/jobs")
@@ -43,7 +44,7 @@ def create_job(body: JobCreate, user: CurrentUser = Depends(require_active_subsc
     if not rows:
         raise HTTPException(status_code=500, detail="Could not create job.")
     log_action(user.organization_id, user.id, user.email, "job_created", "job", rows[0]["id"])
-    return rows[0]
+    return json_safe(rows[0])
 
 
 @router.patch("/jobs/{job_id}")
@@ -61,7 +62,7 @@ def update_job(job_id: str, body: JobUpdate, user: CurrentUser = Depends(require
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Job not found.")
-    return result.data[0]
+    return json_safe(result.data[0])
 
 
 @router.delete("/jobs/{job_id}")
@@ -103,7 +104,7 @@ def list_candidates(
             or q_lower in (r.get("email") or "").lower()
             or q_lower in (r.get("current_role") or "").lower()
         ]
-    return rows
+    return json_safe(rows)
 
 
 @router.get("/candidates/{candidate_id}")
@@ -128,8 +129,8 @@ def get_candidate(candidate_id: str, user: CurrentUser = Depends(require_active_
         .limit(20)
         .execute()
     )
-    data["history"] = logs.data or []
-    return data
+    data["history"] = json_safe(logs.data or [])
+    return json_safe(data)
 
 
 @router.post("/candidates/upload")
@@ -185,6 +186,9 @@ async def upload_candidate(
         )
         .execute()
     )
+    rows = exec_rows(row)
+    if not rows:
+        raise HTTPException(status_code=500, detail="Could not save candidate.")
     log_action(
         user.organization_id,
         user.id,
@@ -194,10 +198,7 @@ async def upload_candidate(
         candidate_id,
         {"filename": filename},
     )
-    rows = exec_rows(row)
-    if not rows:
-        raise HTTPException(status_code=500, detail="Could not save candidate.")
-    return rows[0]
+    return json_safe(rows[0])
 
 
 @router.patch("/candidates/{candidate_id}")
@@ -220,7 +221,7 @@ def update_candidate(
     if not result.data:
         raise HTTPException(status_code=404, detail="Candidate not found.")
     log_action(user.organization_id, user.id, user.email, "candidate_updated", "candidate", candidate_id, updates)
-    return result.data[0]
+    return json_safe(result.data[0])
 
 
 @router.delete("/candidates/{candidate_id}")
@@ -304,43 +305,54 @@ def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_active_s
             skipped += 1
             continue
 
-        scoring = score_candidate(cand, job["description"])
-        if scoring.get("error"):
-            results.append({"id": cand["id"], "name": cand["name"], "error": scoring["error"]})
-            continue
+        try:
+            scoring = score_candidate(cand, job["description"])
+            if scoring.get("error"):
+                results.append({"id": cand["id"], "name": cand["name"], "error": scoring["error"]})
+                continue
 
-        job_changed = cand.get("job_id") != body.job_id
-        updates = {
-            "score": scoring["score"],
-            "score_status": scoring["status"],
-            "score_reason": " | ".join(scoring.get("reason", [])),
-            "status": "Scored",
-            "job_id": body.job_id,
-        }
-        if job_changed:
-            updates["shortlisted"] = False
+            job_changed = cand.get("job_id") != body.job_id
+            updates = {
+                "score": scoring["score"],
+                "score_status": scoring["status"],
+                "score_reason": " | ".join(scoring.get("reason", [])),
+                "status": "Scored",
+                "job_id": body.job_id,
+            }
+            if job_changed:
+                updates["shortlisted"] = False
 
-        updated = db.table("candidates").update(updates).eq("id", cand["id"]).execute()
-        log_action(
-            user.organization_id,
-            user.id,
-            user.email,
-            "candidate_scored",
-            "candidate",
-            cand["id"],
-            {"score": scoring["score"], "status": scoring["status"], "job_id": body.job_id},
-        )
-        row = updated.data[0] if updated.data else {"id": cand["id"], **scoring}
-        results.append(row)
+            db.table("candidates").update(updates).eq("id", cand["id"]).execute()
+            log_action(
+                user.organization_id,
+                user.id,
+                user.email,
+                "candidate_scored",
+                "candidate",
+                cand["id"],
+                {"score": scoring["score"], "status": scoring["status"], "job_id": body.job_id},
+            )
+            results.append(
+                {
+                    "id": cand["id"],
+                    "name": cand["name"],
+                    "score": scoring["score"],
+                    "score_status": scoring["status"],
+                }
+            )
+        except Exception as exc:
+            results.append({"id": cand["id"], "name": cand["name"], "error": str(exc)})
 
     scored_count = len([r for r in results if not r.get("error")])
-    return {
-        "scored": scored_count,
-        "skipped": skipped,
-        "job_title": job.get("title"),
-        "results": results,
-        "message": f"Scored {scored_count} candidate(s) against \"{job.get('title')}\".",
-    }
+    return json_safe(
+        {
+            "scored": scored_count,
+            "skipped": skipped,
+            "job_title": job.get("title"),
+            "results": results,
+            "message": f"Scored {scored_count} candidate(s) against \"{job.get('title')}\".",
+        }
+    )
 
 
 @router.post("/shortlist/auto")
@@ -373,11 +385,13 @@ def auto_shortlist(body: ShortlistRequest, user: CurrentUser = Depends(require_a
         )
         shortlisted.append(row["name"])
 
-    return {
-        "count": len(shortlisted),
-        "names": shortlisted,
-        "message": f"Shortlisted {len(shortlisted)} candidate(s): {', '.join(shortlisted) if shortlisted else 'none found'}.",
-    }
+    return json_safe(
+        {
+            "count": len(shortlisted),
+            "names": shortlisted,
+            "message": f"Shortlisted {len(shortlisted)} candidate(s): {', '.join(shortlisted) if shortlisted else 'none found'}.",
+        }
+    )
 
 
 @router.get("/dashboard/stats")
@@ -388,13 +402,15 @@ def dashboard_stats(user: CurrentUser = Depends(require_active_subscription)):
     for r in rows:
         s = r.get("status") or "Unknown"
         status_counts[s] = status_counts.get(s, 0) + 1
-    return {
-        "total": len(rows),
-        "scored": len([r for r in rows if float(r.get("score") or 0) > 0]),
-        "shortlisted": len([r for r in rows if r.get("shortlisted")]),
-        "contacted": len([r for r in rows if r.get("contacted")]),
-        "interviews": len([r for r in rows if r.get("status") == "Interview Scheduled"]),
-        "rejected": len([r for r in rows if r.get("status") == "Rejected"]),
-        "pipeline": status_counts,
-        "recent": rows[:8],
-    }
+    return json_safe(
+        {
+            "total": len(rows),
+            "scored": len([r for r in rows if float(r.get("score") or 0) > 0]),
+            "shortlisted": len([r for r in rows if r.get("shortlisted")]),
+            "contacted": len([r for r in rows if r.get("contacted")]),
+            "interviews": len([r for r in rows if r.get("status") == "Interview Scheduled"]),
+            "rejected": len([r for r in rows if r.get("status") == "Rejected"]),
+            "pipeline": status_counts,
+            "recent": json_safe(rows[:8]),
+        }
+    )

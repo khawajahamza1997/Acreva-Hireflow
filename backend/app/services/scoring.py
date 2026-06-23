@@ -88,7 +88,7 @@ def score_candidate(candidate: dict, job_description: str) -> dict:
             cv_text=(candidate.get("raw_text") or candidate.get("cv_text") or "")[:3000],
         )
         response = get_client().chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "Return valid JSON only."},
                 {"role": "user", "content": prompt},

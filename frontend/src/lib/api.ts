@@ -115,10 +115,12 @@ export async function api<T>(
     const detail = data.detail;
     const message =
       typeof detail === "string"
-        ? detail
+        ? detail === "Something went wrong. Please try again or contact support." && data.error
+          ? String(data.error)
+          : detail
         : Array.isArray(detail)
           ? detail.map((d: { msg?: string }) => d.msg).join(", ")
-          : data.message || "Request failed";
+          : data.message || data.error || "Request failed";
     if (res.status === 401 && token && typeof window !== "undefined") {
       clearTokens();
       window.location.href = `/login?reason=${encodeURIComponent(message)}`;

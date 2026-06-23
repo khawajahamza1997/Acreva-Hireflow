@@ -1,4 +1,9 @@
+import logging
+
 from app.database import get_admin_client
+from app.utils.json_safe import json_safe
+
+logger = logging.getLogger(__name__)
 
 
 def log_action(
@@ -10,18 +15,22 @@ def log_action(
     entity_id: str | None = None,
     details: dict | None = None,
 ) -> None:
-    db = get_admin_client()
-    db.table("audit_logs").insert(
-        {
-            "organization_id": org_id,
-            "user_id": user_id,
-            "user_email": user_email,
-            "action": action,
-            "entity_type": entity_type,
-            "entity_id": entity_id,
-            "details": details or {},
-        }
-    ).execute()
+    """Write audit log; never raise — main user action must not fail because of logging."""
+    try:
+        db = get_admin_client()
+        db.table("audit_logs").insert(
+            {
+                "organization_id": org_id,
+                "user_id": user_id,
+                "user_email": user_email,
+                "action": action,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "details": json_safe(details or {}),
+            }
+        ).execute()
+    except Exception as exc:
+        logger.warning("Audit log failed (%s): %s", action, exc)
 
 
 def list_logs(org_id: str, limit: int = 50) -> list[dict]:
@@ -34,4 +43,4 @@ def list_logs(org_id: str, limit: int = 50) -> list[dict]:
         .limit(limit)
         .execute()
     )
-    return result.data or []
+    return json_safe(result.data or [])
