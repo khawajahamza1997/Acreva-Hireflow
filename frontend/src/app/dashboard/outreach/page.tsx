@@ -54,6 +54,28 @@ export default function OutreachPage() {
     }
   }, [templateType, templates]);
 
+  useEffect(() => {
+    if (!candidateId || !templateType) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api<{ subject: string; body: string }>(
+          `/api/v1/email-templates/${templateType}/preview?candidate_id=${candidateId}`,
+          { method: "POST" }
+        );
+        if (!cancelled) {
+          setSubject(res.subject);
+          setBody(res.body);
+        }
+      } catch {
+        /* keep template text; send still fills placeholders on the server */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [candidateId, templateType]);
+
   async function preview() {
     if (!candidateId) return;
     setError("");

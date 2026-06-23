@@ -6,6 +6,8 @@ from app.config import settings
 from app.services.email_service import (
     send_email,
     render_template,
+    apply_placeholders,
+    build_outreach_placeholders,
     DEFAULT_TEMPLATES,
     email_is_configured,
     is_resend_sandbox_from,
@@ -15,6 +17,19 @@ from app.services.audit import log_action, list_logs
 from app.services.org_setup import ensure_default_templates
 
 router = APIRouter(tags=["outreach"])
+
+
+def _job_title_for_candidate(db, candidate: dict, organization_id: str) -> str:
+    job_id = candidate.get("job_id")
+    if not job_id:
+        return "the role"
+    job = exec_maybe_single(
+        db.table("jobs")
+        .select("title")
+        .eq("id", job_id)
+        .eq("organization_id", organization_id)
+    )
+    return (job or {}).get("title") or "the role"
 
 
 @router.get("/email-templates")
@@ -71,15 +86,13 @@ def preview_template(
     )
     if not cand:
         raise HTTPException(status_code=404, detail="Candidate not found.")
-    placeholders = {
-        "candidate_name": cand.get("name") or "Candidate",
-        "job_title": job_title,
-        "company_name": user.org_name,
-        "recruiter_name": user.full_name or "Recruitment Team",
-        "interview_date": cand.get("interview_date") or "To be confirmed",
-        "interview_time": cand.get("interview_time") or "To be confirmed",
-        "interview_format": "Video call (link to follow)",
-    }
+    resolved_job_title = job_title if job_title != "the role" else _job_title_for_candidate(db, cand, user.organization_id)
+    placeholders = build_outreach_placeholders(
+        cand,
+        company_name=user.org_name,
+        recruiter_name=user.full_name or "Recruitment Team",
+        job_title=resolved_job_title,
+    )
     return render_template(tmpl, placeholders)
 
 
@@ -97,6 +110,15 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
     if not cand:
         raise HTTPException(status_code=404, detail="Candidate not found.")
 
+    placeholders = build_outreach_placeholders(
+        cand,
+        company_name=user.org_name,
+        recruiter_name=user.full_name or "Recruitment Team",
+        job_title=_job_title_for_candidate(db, cand, user.organization_id),
+    )
+    subject = apply_placeholders(body.subject, placeholders)
+    email_body = apply_placeholders(body.body, placeholders)
+
     if body.demo_mode:
         log_action(
             user.organization_id,
@@ -105,9 +127,15 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
             "email_preview",
             "candidate",
             body.candidate_id,
-            {"subject": body.subject},
+            {"subject": subject},
         )
-        return {"success": True, "demo": True, "message": "Demo mode — email not sent."}
+        return {
+            "success": True,
+            "demo": True,
+            "message": "Demo mode — email not sent.",
+            "subject": subject,
+            "body": email_body,
+        }
 
     try:
         to_email, redirect_note = resolve_outreach_recipient(
@@ -117,7 +145,7 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    result = send_email(to_email, body.subject, body.body)
+    result = send_email(to_email, subject, email_body)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
 
@@ -129,7 +157,7 @@ def send_outreach(body: SendEmailRequest, user: CurrentUser = Depends(require_ac
         "email_sent",
         "candidate",
         body.candidate_id,
-        {"subject": body.subject, "to": to_email},
+        {"subject": subject, "to": to_email},
     )
     message = f"Email sent to {to_email}."
     if redirect_note:

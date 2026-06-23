@@ -48,10 +48,38 @@ Kind regards,
 }
 
 
+def apply_placeholders(text: str, placeholders: dict) -> str:
+    """Replace {key} and [key] placeholders without breaking already-filled text."""
+    result = text or ""
+    for key, value in placeholders.items():
+        replacement = str(value)
+        result = result.replace("{" + key + "}", replacement)
+        result = result.replace("[" + key + "]", replacement)
+    return result
+
+
+def build_outreach_placeholders(
+    candidate: dict,
+    *,
+    company_name: str,
+    recruiter_name: str,
+    job_title: str = "the role",
+) -> dict:
+    return {
+        "candidate_name": candidate.get("name") or "Candidate",
+        "job_title": job_title,
+        "company_name": company_name or "our company",
+        "recruiter_name": recruiter_name or "Recruitment Team",
+        "interview_date": candidate.get("interview_date") or "To be confirmed",
+        "interview_time": candidate.get("interview_time") or "To be confirmed",
+        "interview_format": candidate.get("interview_format") or "Video call (link to follow)",
+    }
+
+
 def render_template(template: dict, placeholders: dict) -> dict:
     return {
-        "subject": template["subject"].format(**placeholders),
-        "body": template["body"].format(**placeholders),
+        "subject": apply_placeholders(template["subject"], placeholders),
+        "body": apply_placeholders(template["body"], placeholders),
     }
 
 
