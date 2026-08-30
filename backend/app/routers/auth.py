@@ -54,7 +54,6 @@ def signup(body: SignUpRequest):
                 "plan": "starter",
             }
         )
-        .select()
         .execute()
     )
     org_rows = exec_rows(org)
@@ -127,7 +126,6 @@ def onboarding(body: OnboardingRequest, user: CurrentUser = Depends(get_current_
     org = (
         db.table("organizations")
         .insert({"name": body.organization_name, "slug": slug, "subscription_status": "trialing"})
-        .select()
         .execute()
     )
     org_rows = exec_rows(org)

@@ -127,7 +127,6 @@ def create_job(body: JobCreate, user: CurrentUser = Depends(require_active_subsc
                 "requirements_source": body.requirements_source,
             }
         )
-        .select()
         .execute()
     )
     rows = exec_rows(row)
@@ -482,7 +481,6 @@ async def upload_candidate(
                 "processing_status": "Completed",
             }
         )
-        .select()
         .execute()
     )
     rows = exec_rows(row)
@@ -567,7 +565,6 @@ async def upload_candidates_batch(
                         "processing_status": "Queued",
                     }
                 )
-                .select()
                 .execute()
             )
             rows = exec_rows(row)
@@ -603,7 +600,6 @@ async def upload_candidates_batch(
                 "total_count": len(accepted),
             }
         )
-        .select()
         .execute()
     )
     batch = exec_rows(batch_row)[0]
@@ -721,7 +717,6 @@ def reanalyze_candidate(candidate_id: str, user: CurrentUser = Depends(require_a
                 "total_count": 1,
             }
         )
-        .select()
         .execute()
     )
     batch_id = exec_rows(batch_row)[0]["id"]
@@ -988,7 +983,6 @@ def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_active_s
                 "total_count": len(to_score_ids),
             }
         )
-        .select()
         .execute()
     )
     batch = exec_rows(batch_row)[0]
