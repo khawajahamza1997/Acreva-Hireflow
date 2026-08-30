@@ -646,6 +646,11 @@ def get_processing_batch(batch_id: str, user: CurrentUser = Depends(require_acti
         .eq("processing_batch_id", batch_id)
         .execute()
     ).data or []
+    # completed_count/failed_count on the batch row are only written once, when the whole
+    # background run finishes — compute live counts from the candidates themselves so the
+    # progress bar updates as each one finishes, not just at the very end.
+    batch["completed_count"] = sum(1 for c in candidates if c["processing_status"] in ("Completed", "Needs review"))
+    batch["failed_count"] = sum(1 for c in candidates if c["processing_status"] == "Failed")
     batch["candidates"] = candidates
     return json_safe(batch)
 
