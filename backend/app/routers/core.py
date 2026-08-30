@@ -656,7 +656,7 @@ def get_processing_batch(batch_id: str, user: CurrentUser = Depends(require_acti
 
 
 @router.post("/processing-batches/{batch_id}/retry")
-def retry_processing_batch(
+async def retry_processing_batch(
     batch_id: str,
     body: RetryProcessingRequest,
     user: CurrentUser = Depends(require_active_subscription),
@@ -674,7 +674,7 @@ def retry_processing_batch(
 
 
 @router.post("/candidates/{candidate_id}/retry-processing")
-def retry_candidate_processing(candidate_id: str, user: CurrentUser = Depends(require_active_subscription)):
+async def retry_candidate_processing(candidate_id: str, user: CurrentUser = Depends(require_active_subscription)):
     if user.role == "viewer":
         raise HTTPException(status_code=403, detail="Viewers cannot retry processing.")
     db = get_admin_client()
@@ -694,7 +694,7 @@ def retry_candidate_processing(candidate_id: str, user: CurrentUser = Depends(re
 
 
 @router.post("/candidates/{candidate_id}/reanalyze")
-def reanalyze_candidate(candidate_id: str, user: CurrentUser = Depends(require_active_subscription)):
+async def reanalyze_candidate(candidate_id: str, user: CurrentUser = Depends(require_active_subscription)):
     """Force a fresh scoring pass on a candidate regardless of current status — unlike
     retry-processing, this works on already-Completed candidates too (section 46)."""
     if user.role == "viewer":
@@ -864,7 +864,7 @@ def bulk_shortlist(body: BulkShortlistRequest, user: CurrentUser = Depends(requi
 
 
 @router.post("/candidates/retry-processing-bulk")
-def retry_processing_bulk(body: BulkRetryRequest, user: CurrentUser = Depends(require_active_subscription)):
+async def retry_processing_bulk(body: BulkRetryRequest, user: CurrentUser = Depends(require_active_subscription)):
     if user.role == "viewer":
         raise HTTPException(status_code=403, detail="Viewers cannot retry processing.")
     db = get_admin_client()
@@ -945,7 +945,7 @@ def export_candidates(
     "/scoring/run",
     dependencies=[Depends(rate_limiter("scoring", settings.rate_limit_scoring_per_minute))],
 )
-def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_active_subscription)):
+async def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_active_subscription)):
     if user.role == "viewer":
         raise HTTPException(status_code=403, detail="Viewers cannot score candidates.")
     db = get_admin_client()
