@@ -54,6 +54,10 @@ class BulkShortlistRequest(BaseModel):
     shortlisted: bool = True
 
 
+class BulkDeleteRequest(BaseModel):
+    candidate_ids: list[str] = Field(min_length=1)
+
+
 class BulkRetryRequest(BaseModel):
     candidate_ids: list[str] = Field(min_length=1)
 

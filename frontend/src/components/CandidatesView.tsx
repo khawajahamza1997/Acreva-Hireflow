@@ -75,6 +75,8 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
   const [uploading, setUploading] = useState(false);
   const [batchId, setBatchId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
+  const [lastUploadedFiles, setLastUploadedFiles] = useState<File[]>([]);
+  const [resolvingDuplicates, setResolvingDuplicates] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -116,6 +118,7 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
     setDuplicates([]);
     try {
       const res = await uploadCvBatch(files, uploadJobId || undefined);
+      setLastUploadedFiles(files);
       setFiles([]);
       if (res.batch_id) setBatchId(res.batch_id);
       setDuplicates(res.duplicates || []);
@@ -133,9 +136,7 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
   }
 
   async function uploadDuplicateAsNew(dup: DuplicateCandidate) {
-    const file = files.find((f) => f.name === dup.filename);
-    // files may already be cleared after the batch call; re-select isn't tracked, so just
-    // acknowledge and let the recruiter know they should re-pick that file if needed.
+    const file = lastUploadedFiles.find((f) => f.name === dup.filename);
     setDuplicates((prev) => prev.filter((d) => d.filename !== dup.filename));
     if (!file) {
       setError(`Please re-select "${dup.filename}" and upload again to force it in as a new candidate.`);
@@ -147,6 +148,37 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
       setSuccess(`Uploading "${dup.filename}" as a new candidate.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
+    }
+  }
+
+  function useExistingForAllDuplicates() {
+    setDuplicates([]);
+    setSuccess("Kept the existing candidates — none of the flagged files were re-uploaded.");
+  }
+
+  async function uploadAllDuplicatesAsNew() {
+    if (duplicates.length === 0) return;
+    setResolvingDuplicates(true);
+    setError("");
+    try {
+      const filenames = duplicates.map((d) => d.filename);
+      const filesToUpload = lastUploadedFiles.filter((f) => filenames.includes(f.name));
+      const missing = filenames.filter((name) => !filesToUpload.some((f) => f.name === name));
+      if (filesToUpload.length === 0) {
+        setError("Please re-select the duplicate file(s) and upload again to force them in as new candidates.");
+        return;
+      }
+      const res = await uploadCvBatch(filesToUpload, uploadJobId || undefined, filenames);
+      if (res.batch_id) setBatchId(res.batch_id);
+      setDuplicates([]);
+      setSuccess(
+        `Uploading ${filesToUpload.length} file(s) as new candidates.` +
+          (missing.length ? ` (${missing.length} file(s) need to be re-selected manually.)` : "")
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setResolvingDuplicates(false);
     }
   }
 
@@ -259,6 +291,26 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
       URL.revokeObjectURL(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Export failed.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function bulkDelete() {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} candidate(s)? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    setError("");
+    try {
+      const res = await api<{ message: string }>("/api/v1/candidates/bulk-delete", {
+        method: "POST",
+        body: JSON.stringify({ candidate_ids: Array.from(selected) }),
+      });
+      setSuccess(res.message);
+      setSelected(new Set());
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bulk delete failed.");
     } finally {
       setBulkBusy(false);
     }
@@ -415,7 +467,17 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
 
       {duplicates.length > 0 && (
         <div className="card mt-4 space-y-2 border-amber-200 bg-amber-50">
-          <h2 className="font-bold text-sm">Duplicate candidates detected</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-bold text-sm">{duplicates.length} duplicate candidate(s) detected</h2>
+            <div className="flex gap-2">
+              <button type="button" className="btn-secondary text-xs px-3 py-1.5" disabled={resolvingDuplicates} onClick={useExistingForAllDuplicates}>
+                Use existing for all
+              </button>
+              <button type="button" className="btn-primary text-xs px-3 py-1.5" disabled={resolvingDuplicates} onClick={uploadAllDuplicatesAsNew}>
+                {resolvingDuplicates ? "Uploading..." : "Upload all as new"}
+              </button>
+            </div>
+          </div>
           {duplicates.map((d) => (
             <div key={d.filename} className="flex items-center justify-between text-sm gap-3">
               <span>
@@ -463,6 +525,9 @@ export default function CandidatesView({ fixedJobId }: { fixedJobId?: string }) 
           </button>
           <button type="button" className="btn-secondary text-sm" disabled={bulkBusy} onClick={bulkRetry}>
             Retry failed processing
+          </button>
+          <button type="button" className="btn-danger text-sm" disabled={bulkBusy} onClick={bulkDelete}>
+            Delete selected
           </button>
           <button type="button" className="text-sm text-slate-500" onClick={() => setSelected(new Set())}>
             Clear selection

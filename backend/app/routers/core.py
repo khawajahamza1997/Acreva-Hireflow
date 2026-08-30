@@ -13,6 +13,7 @@ from app.schemas import (
     RetryProcessingRequest,
     CompareRequest,
     BulkShortlistRequest,
+    BulkDeleteRequest,
     BulkRetryRequest,
 )
 from app.services.cv_parser import process_cv_bytes, is_supported_filename
@@ -861,6 +862,31 @@ def bulk_shortlist(body: BulkShortlistRequest, user: CurrentUser = Depends(requi
     verb = "Added" if body.shortlisted else "Removed"
     preposition = "to" if body.shortlisted else "from"
     return {"message": f"{verb} {len(updated)} candidate(s) {preposition} the shortlist."}
+
+
+@router.post("/candidates/bulk-delete")
+def bulk_delete_candidates(body: BulkDeleteRequest, user: CurrentUser = Depends(require_role("owner", "recruiter"))):
+    db = get_admin_client()
+    rows = (
+        db.table("candidates")
+        .select("id, name, cv_storage_path, call_recording_path")
+        .in_("id", body.candidate_ids)
+        .eq("organization_id", user.organization_id)
+        .execute()
+    ).data or []
+    if not rows:
+        return {"message": "No matching candidates to delete."}
+
+    for row in rows:
+        delete_cv(row.get("cv_storage_path") or "")
+        delete_call_recording(row.get("call_recording_path") or "")
+
+    db.table("candidates").delete().in_("id", [r["id"] for r in rows]).eq("organization_id", user.organization_id).execute()
+
+    for row in rows:
+        log_action(user.organization_id, user.id, user.email, "candidate_deleted", "candidate", row["id"], {"name": row.get("name"), "bulk": True})
+
+    return {"message": f"Deleted {len(rows)} candidate(s)."}
 
 
 @router.post("/candidates/retry-processing-bulk")
