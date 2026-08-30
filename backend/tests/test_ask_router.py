@@ -4,7 +4,12 @@ CANDIDATES = [
     {"id": "1", "name": "Alice", "score": 95, "score_status": "Strong Match", "meets_required": True, "processing_status": "Completed"},
     {"id": "2", "name": "Bob", "score": 80, "score_status": "Good Match", "meets_required": False, "processing_status": "Completed"},
     {"id": "3", "name": "Carol", "score": 55, "score_status": "Low Match", "meets_required": False, "processing_status": "Failed", "processing_error": "Could not extract text"},
-    {"id": "4", "name": "Dave", "score": 0, "score_status": None, "meets_required": None, "processing_status": "Queued"},
+    # Dave has never been scored (score is null, e.g. still Queued) — must never appear in
+    # score-based results, since null means "not scored" not "scored 0".
+    {"id": "4", "name": "Dave", "score": None, "score_status": None, "meets_required": None, "processing_status": "Queued"},
+    # Eve was genuinely scored 0/100 (a real "no match at all") — this is a legitimate score,
+    # not an unscored sentinel, so she must still appear in score-based results.
+    {"id": "5", "name": "Eve", "score": 0, "score_status": "Low Match", "meets_required": False, "processing_status": "Completed"},
 ]
 
 
@@ -15,11 +20,11 @@ def test_score_above_threshold():
     assert "Alice" in result["answer"]
 
 
-def test_score_below_threshold_excludes_unscored():
+def test_score_below_threshold_excludes_unscored_but_includes_zero():
     result = try_deterministic_answer("show candidates with score below 60", CANDIDATES)
     assert result is not None
-    # Carol (55) qualifies; Dave (0) must not, since 0 means "not scored" not "low score"
-    assert result["cited_candidate_ids"] == ["3"]
+    # Eve (0) and Carol (55) were genuinely scored and qualify; Dave (null / never scored) must not.
+    assert result["cited_candidate_ids"] == ["5", "3"]
 
 
 def test_top_n_by_score():
@@ -39,7 +44,7 @@ def test_meets_all_requirements():
 def test_missing_requirements():
     result = try_deterministic_answer("which candidates are missing requirements", CANDIDATES)
     assert result is not None
-    assert set(result["cited_candidate_ids"]) == {"2", "3"}
+    assert set(result["cited_candidate_ids"]) == {"2", "3", "5"}
 
 
 def test_failed_processing():

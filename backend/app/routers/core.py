@@ -94,7 +94,9 @@ def get_job_dashboard(job_id: str, user: CurrentUser = Depends(require_active_su
     shortlisted = [r for r in rows if r.get("shortlisted")]
     contacted = [r for r in rows if r.get("contacted")]
     failed = [r for r in rows if r.get("processing_status") == "Failed"]
-    scored = [r for r in rows if float(r.get("score") or 0) > 0]
+    # A candidate can legitimately score exactly 0/100 (a real "no match at all", not "not yet
+    # scored") — score is nullable, so "has a score" means the column isn't null, not "score > 0".
+    scored = [r for r in rows if r.get("score") is not None]
     average_score = round(sum(float(r.get("score") or 0) for r in scored) / len(scored), 1) if scored else None
 
     return json_safe(
@@ -990,7 +992,9 @@ async def run_scoring(body: ScoreRequest, user: CurrentUser = Depends(require_ac
     to_score_ids = []
     skipped = 0
     for cand in candidates:
-        already_scored = cand.get("score") and float(cand.get("score") or 0) > 0
+        # score is nullable — a candidate can legitimately score exactly 0/100, which still
+        # means "already scored" and must not trigger a wasted re-scoring AI call.
+        already_scored = cand.get("score") is not None
         same_job = cand.get("job_id") == body.job_id
         same_version = cand.get("scored_requirements_version") == current_version
         if already_scored and same_job and same_version and not body.rescore and not body.candidate_ids:
@@ -1094,7 +1098,7 @@ def dashboard_stats(user: CurrentUser = Depends(require_active_subscription)):
     return json_safe(
         {
             "total": len(rows),
-            "scored": len([r for r in rows if float(r.get("score") or 0) > 0]),
+            "scored": len([r for r in rows if r.get("score") is not None]),
             "shortlisted": len([r for r in rows if r.get("shortlisted")]),
             "contacted": len([r for r in rows if r.get("contacted")]),
             "interviews": len([r for r in rows if r.get("status") == "Interview Scheduled"]),

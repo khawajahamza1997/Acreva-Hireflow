@@ -46,8 +46,10 @@ def try_deterministic_answer(question: str, candidates: list[dict]) -> dict | No
     match = _SCORE_BELOW.search(q)
     if match:
         threshold = float(match.group(1))
+        # score is nullable — a candidate can legitimately score exactly 0 (a real "no match"),
+        # so "was this candidate scored" means score is not None, not score > 0.
         matches = sorted(
-            [c for c in candidates if (c.get("score") or 0) < threshold and (c.get("score") or 0) > 0],
+            [c for c in candidates if c.get("score") is not None and c.get("score") < threshold],
             key=lambda c: c.get("score") or 0,
         )
         if not matches:
