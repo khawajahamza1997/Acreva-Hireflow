@@ -82,7 +82,7 @@ export default function DashboardPage() {
               <div key={i} className="flex justify-between text-sm border-b border-slate-100 pb-2">
                 <span className="font-semibold">{c.name}</span>
                 <span className="text-slate-500">
-                  {c.score ? `${c.score}/10 · ` : ""}
+                  {c.score ? `${c.score}/100 · ` : ""}
                   {c.status}
                 </span>
               </div>

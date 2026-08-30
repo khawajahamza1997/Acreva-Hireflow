@@ -1,0 +1,37 @@
+FIVERR INTRO VIDEO — TELEPROMPTER SCRIPT
+Profile: Khawaja Hamza / Acreva — AI Automation Developer
+Target length: 45-55 seconds total
+Record each block separately, then edit in CapCut.
+
+================================================================================
+BLOCK A — FACE CAM (hook, ~12 seconds)
+================================================================================
+
+Hi, I'm Hamza — an AI automation developer at Acreva.
+
+I help businesses eliminate repetitive work using Python and AI APIs like Claude and OpenAI.
+
+================================================================================
+BLOCK B — VOICEOVER (screen demo, ~22 seconds)
+================================================================================
+
+Read this while HireFlow screen clips play. You do not need to be on camera.
+
+I build custom automations — CV and document screening, AI chatbots, email workflows, PDF data extraction, and full pipelines like HireFlow: from upload to shortlist to interview outreach.
+
+Fast delivery, clean code, and clear communication.
+
+================================================================================
+BLOCK C — FACE CAM (close, ~10 seconds)
+================================================================================
+
+If you have a repetitive task eating your team's time, message me on Fiverr with what you want automated — I'll reply with a clear plan before you order.
+
+================================================================================
+TIPS
+================================================================================
+
+- Speak slightly slower than normal conversation.
+- Pause half a second between sentences.
+- Record Block A and Block C in the same session (same lighting and audio).
+- Re-record any block with a stumble — CapCut joins them later.

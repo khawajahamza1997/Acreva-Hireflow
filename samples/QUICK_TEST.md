@@ -24,13 +24,11 @@ Senior React Developer
 
 Click **Continue**.
 
-## Onboarding — step 2 (Upload CV)
+## Onboarding — step 2 (Upload CVs)
 
-Upload all three files from `cvs/` one at a time, **or** upload only `01-sarah-chen-strong-match.txt` for a quick test.
+Select **all 3 files** at once from `cvs/` (Ctrl+click or Shift+click), then click **Upload CV(s) & continue**.
 
-After each upload, continue to the next step when ready.
-
-**Tip:** On **Candidates** page you can upload the other two CVs later without redoing onboarding.
+Or upload only `01-sarah-chen-strong-match.txt` for a quick test.
 
 ## Onboarding — steps 3–4
 

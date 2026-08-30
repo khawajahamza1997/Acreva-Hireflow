@@ -7,11 +7,16 @@ from app.config import settings
 from app.deps import get_current_user, CurrentUser
 from app.schemas import SignUpRequest, LoginRequest, OnboardingRequest, MessageResponse, TokenResponse
 from app.services.org_setup import slugify, ensure_default_templates
+from app.utils.rate_limit import rate_limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/signup", response_model=TokenResponse)
+@router.post(
+    "/signup",
+    response_model=TokenResponse,
+    dependencies=[Depends(rate_limiter("auth", settings.rate_limit_auth_per_minute))],
+)
 def signup(body: SignUpRequest):
     db = get_admin_client()
     slug = slugify(body.organization_name)
@@ -49,6 +54,7 @@ def signup(body: SignUpRequest):
                 "plan": "starter",
             }
         )
+        .select()
         .execute()
     )
     org_rows = exec_rows(org)
@@ -84,7 +90,11 @@ def signup(body: SignUpRequest):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    dependencies=[Depends(rate_limiter("auth", settings.rate_limit_auth_per_minute))],
+)
 def login(body: LoginRequest):
     db = get_admin_client()
     auth = db.auth.sign_in_with_password({"email": body.email, "password": body.password})
@@ -117,6 +127,7 @@ def onboarding(body: OnboardingRequest, user: CurrentUser = Depends(get_current_
     org = (
         db.table("organizations")
         .insert({"name": body.organization_name, "slug": slug, "subscription_status": "trialing"})
+        .select()
         .execute()
     )
     org_rows = exec_rows(org)

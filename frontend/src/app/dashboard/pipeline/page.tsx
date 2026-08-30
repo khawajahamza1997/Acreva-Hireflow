@@ -46,7 +46,7 @@ export default function PipelinePage() {
                     className="block rounded-lg bg-page p-2 text-xs hover:ring-2 hover:ring-electric/20"
                   >
                     <div className="font-semibold">{c.name}</div>
-                    {c.score ? <div className="text-electric">{c.score}/10</div> : null}
+                    {c.score ? <div className="text-electric">{c.score}/100</div> : null}
                   </Link>
                 ))}
               </div>

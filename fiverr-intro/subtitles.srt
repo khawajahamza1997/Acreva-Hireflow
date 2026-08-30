@@ -1,0 +1,27 @@
+1
+00:00:00,000 --> 00:00:04,000
+Hi, I'm Hamza — an AI automation developer at Acreva.
+
+2
+00:00:04,000 --> 00:00:12,000
+I help businesses eliminate repetitive work using Python and AI APIs like Claude and OpenAI.
+
+3
+00:00:12,000 --> 00:00:22,000
+I build custom automations — CV and document screening, AI chatbots, email workflows, PDF data extraction,
+
+4
+00:00:22,000 --> 00:00:28,000
+and full pipelines like HireFlow: from upload to shortlist to interview outreach.
+
+5
+00:00:28,000 --> 00:00:33,000
+Fast delivery, clean code, and clear communication.
+
+6
+00:00:33,000 --> 00:00:42,000
+If you have a repetitive task eating your team's time, message me on Fiverr with what you want automated —
+
+7
+00:00:42,000 --> 00:00:50,000
+I'll reply with a clear plan before you order.

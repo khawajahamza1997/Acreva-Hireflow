@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { uploadCvBatch } from "@/lib/upload";
 import SuccessBanner from "@/components/SuccessBanner";
+import ProcessingProgress from "@/components/ProcessingProgress";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export default function OnboardingPage() {
   const [job, setJob] = useState({ title: "", description: "" });
   const [jobId, setJobId] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadBatchId, setUploadBatchId] = useState<string | null>(null);
+  const [scoreBatchId, setScoreBatchId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -46,19 +49,25 @@ export default function OnboardingPage() {
     if (files.length === 0) return;
     await runStep(async () => {
       const res = await uploadCvBatch(files, jobId);
-      setSuccess(res.message + (res.failed ? ` (${res.failed} failed)` : ""));
-      setStep(3);
+      setUploadBatchId(res.batch_id);
+      if (res.rejected.length > 0) {
+        setError(`${res.rejected.length} file(s) rejected: ${res.rejected.map((r) => r.filename).join(", ")}`);
+      }
     });
   }
 
   async function runScore() {
     await runStep(async () => {
-      const res = await api<{ message?: string; scored: number }>("/api/v1/scoring/run", {
+      const res = await api<{ message?: string; batch_id: string | null }>("/api/v1/scoring/run", {
         method: "POST",
         body: JSON.stringify({ job_id: jobId, rescore: true }),
       });
-      setSuccess(res.message || `Scored ${res.scored} candidate(s).`);
-      setStep(4);
+      if (res.batch_id) {
+        setScoreBatchId(res.batch_id);
+      } else {
+        setSuccess(res.message || "No candidates needed scoring.");
+        setStep(4);
+      }
     });
   }
 
@@ -120,7 +129,7 @@ export default function OnboardingPage() {
           </>
         )}
 
-        {step === 2 && (
+        {step === 2 && !uploadBatchId && (
           <>
             <label className="label">Upload CVs (PDF, DOCX, TXT) — select multiple files</label>
             <input
@@ -140,14 +149,32 @@ export default function OnboardingPage() {
             </button>
           </>
         )}
+        {step === 2 && uploadBatchId && (
+          <ProcessingProgress
+            batchId={uploadBatchId}
+            onDone={(batch) => {
+              setSuccess(`Processed ${batch.completed_count} CV(s).`);
+              setStep(3);
+            }}
+          />
+        )}
 
-        {step === 3 && (
+        {step === 3 && !scoreBatchId && (
           <>
-            <p className="text-sm text-slate-600">Run AI scoring against your job description (may take 30–60s).</p>
+            <p className="text-sm text-slate-600">Run AI scoring against your job description in the background.</p>
             <button className="btn-primary" onClick={runScore} disabled={loading}>
-              {loading ? "Scoring..." : "Score all candidates"}
+              {loading ? "Starting..." : "Score all candidates"}
             </button>
           </>
+        )}
+        {step === 3 && scoreBatchId && (
+          <ProcessingProgress
+            batchId={scoreBatchId}
+            onDone={(batch) => {
+              setSuccess(`Scored ${batch.completed_count} candidate(s).`);
+              setStep(4);
+            }}
+          />
         )}
 
         {step === 4 && (

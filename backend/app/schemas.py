@@ -22,11 +22,53 @@ class OnboardingRequest(BaseModel):
 class JobCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=30)
+    structured_requirements: dict[str, Any] | None = None
+    scoring_weights: dict[str, float] | None = None
+    score_thresholds: dict[str, float] | None = None
+    requirements_source: Literal["freeform", "extracted", "structured"] = "freeform"
 
 
 class JobUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
+    structured_requirements: dict[str, Any] | None = None
+    scoring_weights: dict[str, float] | None = None
+    score_thresholds: dict[str, float] | None = None
+    requirements_source: Literal["freeform", "extracted", "structured"] | None = None
+
+
+class ExtractRequirementsRequest(BaseModel):
+    description: str = Field(min_length=30)
+
+
+class RetryProcessingRequest(BaseModel):
+    candidate_ids: list[str] | None = None
+
+
+class CompareRequest(BaseModel):
+    candidate_ids: list[str] = Field(min_length=2, max_length=10)
+
+
+class BulkShortlistRequest(BaseModel):
+    candidate_ids: list[str] = Field(min_length=1)
+    shortlisted: bool = True
+
+
+class BulkRetryRequest(BaseModel):
+    candidate_ids: list[str] = Field(min_length=1)
+
+
+class AskRequest(BaseModel):
+    job_id: str
+    question: str = Field(min_length=1, max_length=2000)
+
+
+class BulkSendEmailRequest(BaseModel):
+    candidate_ids: list[str] = Field(min_length=1)
+    template_type: str = "interview_invite"
+    subject: str
+    body: str
+    demo_mode: bool = False
 
 
 class CandidateUpdate(BaseModel):

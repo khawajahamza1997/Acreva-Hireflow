@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.config import settings
-from app.routers import auth, core, outreach, billing
+from app.routers import auth, core, outreach, billing, assistant
 
 app = FastAPI(
     title="Acreva HireFlow API",
@@ -76,3 +76,4 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(core.router, prefix="/api/v1")
 app.include_router(outreach.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
+app.include_router(assistant.router, prefix="/api/v1")

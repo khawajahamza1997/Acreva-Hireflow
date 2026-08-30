@@ -23,11 +23,11 @@ export default function HomePage() {
             14-day free trial · $39/mo after
           </div>
           <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight">
-            AI-assisted recruitment from CV to interview
+            Screen hundreds of CVs in minutes, not hours.
           </h1>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-            Upload CVs, score against your job description, auto-shortlist top candidates,
-            send outreach emails, and track your pipeline — without enterprise complexity.
+            Upload CVs, define your hiring requirements, and let HireFlow analyze, rank, and explain
+            candidate matches — with evidence for every score, and recruiters kept firmly in control.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/signup" className="btn-primary">
@@ -68,9 +68,9 @@ export default function HomePage() {
       <section className="bg-white border-y border-slate-200 py-16">
         <div className="max-w-6xl mx-auto px-8 grid md:grid-cols-3 gap-8">
           {[
-            ["Upload & parse CVs", "PDF, Word, or text — AI extracts candidate profiles automatically."],
-            ["Score & shortlist", "Weighted AI scoring against your job description. Top N auto-shortlisted."],
-            ["Email & track", "Branded outreach templates, audit log, and full pipeline visibility."],
+            ["Batch process at scale", "Upload up to 300 CVs at once — background processing with live progress, no browser freeze."],
+            ["Explainable scoring", "Every match score breaks down by requirement, with CV evidence — never a black box."],
+            ["Ask HireFlow", "Ask natural-language questions about your candidate pool and get evidence-backed answers."],
           ].map(([title, desc]) => (
             <div key={title} className="card">
               <h3 className="font-bold text-lg mb-2">{title}</h3>

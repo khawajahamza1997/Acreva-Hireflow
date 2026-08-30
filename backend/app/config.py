@@ -21,6 +21,18 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""
 
     openai_api_key: str = ""
+    ai_provider: str = "openai"
+    llm_model: str = "gpt-4o-mini"
+    cv_processing_concurrency: int = 5
+    max_batch_files: int = 300
+    max_cv_file_bytes: int = 10 * 1024 * 1024
+    max_recording_bytes: int = 25 * 1024 * 1024
+    needs_review_min_words: int = 50
+
+    rate_limit_auth_per_minute: int = 10
+    rate_limit_upload_per_minute: int = 5
+    rate_limit_ask_per_minute: int = 20
+    rate_limit_scoring_per_minute: int = 10
 
     resend_api_key: str = ""
     email_from: str = "Acreva HireFlow <noreply@acreva.com>"
